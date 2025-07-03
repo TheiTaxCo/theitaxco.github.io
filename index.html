@@ -1,0 +1,85 @@
+<HTML>
+<Title>Test Accounts</TITLE>
+<HEAD>
+<STYLE>
+table, th, td {
+  border: 1px solid GRAY;
+}
+h2 {
+	color: #3498db;
+}
+</STYLE>
+</HEAD>
+<BODY>
+
+<H1>Test Accounts</H1>
+<H2>Print Checks Module</H2>
+
+
+<DIV>
+     <TABLE>
+          <TR>
+     		<TH>ACCOUNT TYPE</TH>
+		<TH>CHECK TYPE VALUE (1)</TH>
+		<TH>CHECK TYPE VALUE (2)</TH>
+      		<TH>DESCRIPTION</TH>
+   	  </TR>
+   	  <TR>
+      		<TD width="200">BOA 3475098563</TD>
+		<TD width="300">UBOC Laser (Multiple)</TD>
+		<TD width="300">UBOC Laser (Multiple) w/Digital Signature</TD>
+      		<TD width="500">USE THIS ACCOUNT FOR DIGITAL SIGNATURE FLOW.</TD>
+   	  </TR>
+     </TABLE>
+
+   <SCRIPT>
+       function copyText1() {
+           navigator.clipboard.writeText ("BOA 3475098563");
+       }
+   </SCRIPT>
+<button type="button" onclick="copyText1()">Copy</button>
+</DIV>
+<BR>
+<BR>
+<BR>
+
+<DIV>
+     <TABLE>
+          <TR>
+		<TH>CHECK TYPE</TH>
+	  </TR>
+	  <TR>
+		<TD> HP MULTICHECK DIGITAL</TD>
+	  </TR>
+     </TABLE>
+<button type="button" onclick="alert('HP MULTICHECK DIGITAL')">Copy</button>
+</DIV>
+<BR>
+<BR>
+<BR>
+
+<DIV>
+     <TABLE>
+	  <TR>
+		<TH>ACCOUNT TYPE</TH>
+		<TH>CHECK TYPE</TH>
+		<TH>DESCRIPTION</TH>
+	  </TR>
+	  <TR>
+		<TD width="200">BOA 3490670487</TD>
+		<TD width="300">HP 3020 (Multiple)</TD>
+		<TD width="500">USE THIS ACCOUNT FOR NON-DIGITAL SIGNATURE FLOW.</TD>
+	  </TR>
+     </TABLE>
+<SCRIPT>
+       function copyText2() {
+           navigator.clipboard.writeText ("BOA 3490670487");
+       }
+   </SCRIPT>
+<button type="button" onclick="copyText2()">Copy</button>
+</DIV>
+
+
+
+</BODY>
+</HTML>
