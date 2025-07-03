@@ -36,5 +36,82 @@ h2 {
    </SCRIPT>
 <button type="button" onclick="copyText1()">Copy</button>
 </DIV>
+	<BR>
+	<BR>
+	<BR>
+<label>
+  <input type="checkbox" class="task-checkbox">1st Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+<br>
+<label>
+  <input type="checkbox" class="task-checkbox">2nd Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+<br>
+<label>
+  <input type="checkbox" class="task-checkbox">3rd Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+<br>
+<label>
+  <input type="checkbox" class="task-checkbox">4th Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+<br>
+<label>
+  <input type="checkbox" class="task-checkbox">5th Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+<br>
+<label>
+  <input type="checkbox" class="task-checkbox">6th Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+<br>
+<label>
+  <input type="checkbox" class="task-checkbox">7th Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+<br>
+<label>
+  <input type="checkbox" class="task-checkbox">8th Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+<br>
+<label>
+  <input type="checkbox" class="task-checkbox">9th Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+<br>
+<label>
+  <input type="checkbox" class="task-checkbox">10th Meal
+  <span class="timestamp"></span>
+</label>
+<br>
+	<SCRIPT>
+document.querySelectorAll('.task-checkbox').forEach(function(checkbox) {
+  checkbox.addEventListener('click', function(event) {
+    const timestampSpan = event.target.nextElementSibling; // Get the next sibling element (the timestamp span)
+
+    if (event.target.checked) { // Check if the checkbox is checked
+      const now = new Date(); // Get the current date and time
+      const formattedTimestamp = now.toLocaleString(); // Format the date and time as a string
+      timestampSpan.textContent = " Accepted on: " + formattedTimestamp; // Display the timestamp in the span
+    } else {
+      timestampSpan.textContent = ""; // Clear the timestamp if the checkbox is unchecked
+    }
+  });
+});
+</SCRIPT>
 </BODY>
 </HTML>
