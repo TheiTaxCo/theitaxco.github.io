@@ -1,117 +1,131 @@
-<HTML>
-<Title>Uber Deliveries</TITLE>
-<HEAD>
-<STYLE>
-table, th, td {
-  border: 1px solid GRAY;
-}
-h2 {
-	color: #3498db;
-}
-</STYLE>
-</HEAD>
-<BODY>
-<H1>Grubhub Deliveries</H1>
-<H2>Thank you Message</H2>
-<DIV>
-     <TABLE>
-          <TR>
-     		<TH>Occacion Message</TH>
-		<TH>Message Type</TH>
-		<TH>Directed To</TH>
-      		<TH>Description</TH>
-   	  </TR>
-   	  <TR>
-      		<TD width="200">Delivery Completed</TD>Evening Message</TD>
-		<TD width="300">Evening Message</TD>
-		<TD width="300">Uber Deliveries</TD>
-      		<TD width="500">Message is for Thank you for the Tips!</TD>
-   	  </TR>
-     </TABLE>
-
-   <SCRIPT>
-       function copyText1() {
-           navigator.clipboard.writeText ("Thank you for your suport and generious tip! Have a blessed evening");
-       }
-   </SCRIPT>
-<button type="button" onclick="copyText1()">Copy</button>
-</DIV>
-	<BR>
-	<BR>
-	<BR>
-<label>
-  <input type="checkbox" class="task-checkbox">1st Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-<br>
-<label>
-  <input type="checkbox" class="task-checkbox">2nd Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-<br>
-<label>
-  <input type="checkbox" class="task-checkbox">3rd Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-<br>
-<label>
-  <input type="checkbox" class="task-checkbox">4th Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-<br>
-<label>
-  <input type="checkbox" class="task-checkbox">5th Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-<br>
-<label>
-  <input type="checkbox" class="task-checkbox">6th Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-<br>
-<label>
-  <input type="checkbox" class="task-checkbox">7th Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-<br>
-<label>
-  <input type="checkbox" class="task-checkbox">8th Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-<br>
-<label>
-  <input type="checkbox" class="task-checkbox">9th Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-<br>
-<label>
-  <input type="checkbox" class="task-checkbox">10th Meal
-  <span class="timestamp"></span>
-</label>
-<br>
-	<SCRIPT>
-document.querySelectorAll('.task-checkbox').forEach(function(checkbox) {
-  checkbox.addEventListener('click', function(event) {
-    const timestampSpan = event.target.nextElementSibling; // Get the next sibling element (the timestamp span)
-
-    if (event.target.checked) { // Check if the checkbox is checked
-      const now = new Date(); // Get the current date and time
-      const formattedTimestamp = now.toLocaleString(); // Format the date and time as a string
-      timestampSpan.textContent = " Accepted on: " + formattedTimestamp; // Display the timestamp in the span
-    } else {
-      timestampSpan.textContent = ""; // Clear the timestamp if the checkbox is unchecked
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Uber Deliveries</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f9fafb;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 30px;
     }
-  });
-});
-</SCRIPT>
-</BODY>
-</HTML>
+
+    h1, h2 {
+      text-align: center;
+    }
+
+    h1 {
+      color: #2c3e50;
+    }
+
+    h2 {
+      color: #3498db;
+    }
+
+    table {
+      border-collapse: collapse;
+      width: 100%;
+      max-width: 800px;
+      margin-bottom: 20px;
+      background-color: white;
+    }
+
+    th, td {
+      border: 1px solid gray;
+      padding: 8px 12px;
+      text-align: left;
+    }
+
+    th {
+      background-color: #ecf0f1;
+    }
+
+    .checkbox-group {
+      max-width: 600px;
+      margin-top: 20px;
+    }
+
+    .checkbox-group label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: white;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    button {
+      background-color: #2ecc71;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 5px;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #27ae60;
+    }
+  </style>
+  <script>
+    function copyText1() {
+      navigator.clipboard.writeText("Thank you for your support and generous tip! Have a blessed evening");
+    }
+
+    window.addEventListener('DOMContentLoaded', () => {
+      document.querySelectorAll('.task-checkbox').forEach(function (checkbox) {
+        checkbox.addEventListener('click', function (event) {
+          const timestampSpan = event.target.nextElementSibling;
+          if (event.target.checked) {
+            const now = new Date();
+            const formattedTimestamp = now.toLocaleString();
+            timestampSpan.textContent = "Accepted on: " + formattedTimestamp;
+          } else {
+            timestampSpan.textContent = "";
+          }
+        });
+      });
+    });
+  </script>
+</head>
+<body>
+  <h1>Grubhub Deliveries</h1>
+  <h2>Thank You Message</h2>
+
+  <table>
+    <tr>
+      <th>Occasion Message</th>
+      <th>Message Type</th>
+      <th>Directed To</th>
+      <th>Description</th>
+    </tr>
+    <tr>
+      <td width="200">Delivery Completed</td>
+      <td width="300">Evening Message</td>
+      <td width="300">Uber Deliveries</td>
+      <td width="500">Message is for Thank you for the Tips!</td>
+    </tr>
+  </table>
+
+  <button type="button" onclick="copyText1()">Copy Thank You Message</button>
+
+  <div class="checkbox-group">
+    <label><input type="checkbox" class="task-checkbox">1st Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox">2nd Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox">3rd Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox">4th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox">5th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox">6th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox">7th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox">8th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox">9th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox">10th Meal <span class="timestamp"></span></label>
+  </div>
+</body>
+</html>
