@@ -206,32 +206,32 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("resetBtn").onclick = resetAll;
   document.getElementById("computeBtn").onclick = computeSummary;
 
-  // ✅ Mobile zoom-reset logic with proper input focus detection
-  let isFocusingInput = false;
+  const overlay = document.getElementById("zoomResetOverlay");
 
   document.querySelectorAll('input[type="number"]').forEach((input) => {
-    input.addEventListener("focus", () => {
-      isFocusingInput = true;
-    });
-
     input.addEventListener("blur", () => {
       setTimeout(() => {
         const active = document.activeElement;
         const isStillInInput =
           active && active.tagName === "INPUT" && active.type === "number";
 
-        if (!isStillInInput) {
-          isFocusingInput = false;
-        }
+        if (
+          !isStillInInput &&
+          /Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)
+        ) {
+          overlay.style.display = "block";
 
-        if (!isFocusingInput && !isStillInInput) {
-          if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+          const resetZoom = () => {
+            overlay.style.display = "none";
             const scrollY = window.scrollY;
             window.scrollTo(0, scrollY + 1);
             window.scrollTo(0, scrollY);
-          }
+            overlay.removeEventListener("click", resetZoom);
+          };
+
+          overlay.addEventListener("click", resetZoom);
         }
-      }, 200);
+      }, 300);
     });
   });
 });
