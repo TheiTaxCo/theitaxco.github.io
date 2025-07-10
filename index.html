@@ -51,6 +51,14 @@
       justify-content: center;
     }
 
+    .bottom-controls {
+      margin-top: 20px;
+      display: flex;
+      gap: 10px;
+      flex-wrap: wrap;
+      justify-content: center;
+    }
+
     button {
       background-color: #2ecc71;
       color: white;
@@ -72,17 +80,23 @@
 
     .checkbox-row {
       display: flex;
-      justify-content: space-between;
       align-items: center;
+      justify-content: space-between;
       background-color: white;
       padding: 10px 12px;
       border: 1px solid #ccc;
       border-radius: 4px;
       margin-bottom: 8px;
+      position: relative;
+    }
+
+    .checkbox-left {
+      display: flex;
+      align-items: center;
+      gap: 10px;
     }
 
     .checkbox-label {
-      flex: 1;
       font-size: 16px;
     }
 
@@ -91,6 +105,31 @@
       color: #555;
       margin-left: 10px;
       white-space: nowrap;
+    }
+
+    .remove-btn {
+      position: absolute;
+      right: 10px;
+      top: 10px;
+      background: none;
+      border: none;
+      font-size: 18px;
+      color: #888;
+      cursor: pointer;
+    }
+
+    .remove-btn:hover {
+      color: #e74c3c;
+    }
+
+    #summarySection {
+      display: none;
+      max-width: 600px;
+      margin-top: 30px;
+      background: #ffffff;
+      border: 1px solid #ccc;
+      border-radius: 6px;
+      padding: 15px;
     }
   </style>
 
@@ -111,10 +150,11 @@
         odometerEnd: document.getElementById('odoEnd').value
       };
       document.querySelectorAll('.task-checkbox').forEach(cb => {
+        const row = cb.closest('.checkbox-row');
         state.meals.push({
           label: cb.dataset.label,
           checked: cb.checked,
-          timestamp: cb.closest('.checkbox-row').querySelector('.timestamp').textContent
+          timestamp: row.querySelector('.timestamp').textContent
         });
       });
       localStorage.setItem('deliveryAppState', JSON.stringify(state));
@@ -128,50 +168,122 @@
         document.getElementById('odoStart').value = saved.odometerStart || '';
         document.getElementById('odoEnd').value = saved.odometerEnd || '';
         saved.meals.forEach((meal, index) => {
-          if (index >= mealCount) addMeal(); // dynamically add as needed
+          if (index >= mealCount) addMeal();
           const cb = document.querySelectorAll('.task-checkbox')[index];
           const row = cb.closest('.checkbox-row');
           cb.dataset.label = meal.label;
           cb.checked = meal.checked;
           row.querySelector('.checkbox-label').textContent = meal.label;
           row.querySelector('.timestamp').textContent = meal.timestamp;
+
+          const removeBtn = row.querySelector('.remove-btn');
+          removeBtn.style.display = (!cb.checked && !meal.timestamp) ? 'inline' : 'none';
         });
         mealCount = saved.meals.length;
       }
     }
 
-    function addMeal() {
+    function addMeal(labelOverride = null) {
       if (mealCount >= MAX_MEALS) return;
 
       mealCount++;
       const group = document.getElementById('checkboxGroup');
-
       const row = document.createElement('div');
       row.className = 'checkbox-row';
 
-      const label = document.createElement('span');
-      label.className = 'checkbox-label';
-      label.textContent = `${mealCount}th Meal`;
+      const left = document.createElement('div');
+      left.className = 'checkbox-left';
 
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'task-checkbox';
-      checkbox.dataset.label = `${mealCount}th Meal`;
+      const labelText = labelOverride || `${mealCount}th Meal`;
+      checkbox.dataset.label = labelText;
+
+      const label = document.createElement('span');
+      label.className = 'checkbox-label';
+      label.textContent = labelText;
 
       const timestamp = document.createElement('span');
       timestamp.className = 'timestamp';
 
+      const removeBtn = document.createElement('button');
+      removeBtn.className = 'remove-btn';
+      removeBtn.innerHTML = '&times;';
+      removeBtn.onclick = () => {
+        group.removeChild(row);
+        updateMealCount();
+        saveState();
+      };
+
       checkbox.addEventListener('click', () => {
         timestamp.textContent = checkbox.checked ? "Accepted on: " + formatNow() : "";
+        removeBtn.style.display = (!checkbox.checked && !timestamp.textContent) ? 'inline' : 'none';
         saveState();
       });
 
-      row.appendChild(checkbox);
-      row.appendChild(label);
-      row.appendChild(timestamp);
-      group.appendChild(row);
+      left.appendChild(checkbox);
+      left.appendChild(label);
+      left.appendChild(timestamp);
 
+      row.appendChild(left);
+      row.appendChild(removeBtn);
+
+      group.appendChild(row);
       saveState();
+    }
+
+    function updateMealCount() {
+      mealCount = document.querySelectorAll('.task-checkbox').length;
+    }
+
+    function resetAll() {
+      localStorage.removeItem('deliveryAppState');
+      document.getElementById('startTime').textContent = '';
+      document.getElementById('endTime').textContent = '';
+      document.getElementById('odoStart').value = '';
+      document.getElementById('odoEnd').value = '';
+      document.getElementById('summarySection').style.display = 'none';
+      const group = document.getElementById('checkboxGroup');
+      group.innerHTML = '';
+      mealCount = 0;
+      for (let i = 1; i <= 10; i++) {
+        addMeal(`${i}th Meal`);
+      }
+    }
+
+    function copyText1() {
+      navigator.clipboard.writeText("Thank you for your support and generous tip! Have a blessed evening");
+    }
+
+    function computeSummary() {
+      const startText = document.getElementById('startTime').textContent;
+      const endText = document.getElementById('endTime').textContent;
+      const odoStart = parseFloat(document.getElementById('odoStart').value);
+      const odoEnd = parseFloat(document.getElementById('odoEnd').value);
+      const summary = document.getElementById('summarySection');
+
+      let onlineText = "Pending";
+      if (startText) {
+        const startTime = new Date(startText);
+        const endTime = endText ? new Date(endText) : new Date();
+        const diffMs = endTime - startTime;
+        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
+        const diffMin = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
+        onlineText = `${diffHrs} hour${diffHrs !== 1 ? 's' : ''} ${diffMin} minute${diffMin !== 1 ? 's' : ''}`;
+      }
+
+      const totalDeliveries = document.querySelectorAll('.task-checkbox:checked').length;
+
+      let mileageText = "Pending";
+      if (!isNaN(odoStart) && !isNaN(odoEnd) && odoEnd > odoStart) {
+        mileageText = `${(odoEnd - odoStart).toFixed(1)} Miles`;
+      }
+
+      document.getElementById('summaryOnline').textContent = `• Total Online: ${onlineText}`;
+      document.getElementById('summaryDeliveries').textContent = `• Total Deliveries: ${totalDeliveries} Deliveries`;
+      document.getElementById('summaryMileage').textContent = `• Total Mileage: ${mileageText}`;
+      summary.style.display = "block";
     }
 
     window.addEventListener('DOMContentLoaded', () => {
@@ -179,8 +291,11 @@
 
       document.querySelectorAll('.task-checkbox').forEach(cb => {
         cb.addEventListener('click', e => {
-          const timestamp = e.target.closest('.checkbox-row').querySelector('.timestamp');
+          const row = cb.closest('.checkbox-row');
+          const timestamp = row.querySelector('.timestamp');
+          const removeBtn = row.querySelector('.remove-btn');
           timestamp.textContent = cb.checked ? "Accepted on: " + formatNow() : "";
+          removeBtn.style.display = (!cb.checked && !timestamp.textContent) ? 'inline' : 'none';
           saveState();
         });
       });
@@ -198,11 +313,9 @@
       document.getElementById('odoStart').addEventListener('input', saveState);
       document.getElementById('odoEnd').addEventListener('input', saveState);
       document.getElementById('addMealBtn').addEventListener('click', addMeal);
+      document.getElementById('resetBtn').addEventListener('click', resetAll);
+      document.getElementById('computeBtn').addEventListener('click', computeSummary);
     });
-
-    function copyText1() {
-      navigator.clipboard.writeText("Thank you for your support and generous tip! Have a blessed evening");
-    }
   </script>
 </head>
 
@@ -230,20 +343,19 @@
     <button id="endBtn">End</button>
   </div>
 
-  <div id="checkboxGroup" class="checkbox-group">
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="1st Meal"><span class="checkbox-label">1st Meal</span><span class="timestamp"></span></div>
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="2nd Meal"><span class="checkbox-label">2nd Meal</span><span class="timestamp"></span></div>
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="3rd Meal"><span class="checkbox-label">3rd Meal</span><span class="timestamp"></span></div>
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="4th Meal"><span class="checkbox-label">4th Meal</span><span class="timestamp"></span></div>
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="5th Meal"><span class="checkbox-label">5th Meal</span><span class="timestamp"></span></div>
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="6th Meal"><span class="checkbox-label">6th Meal</span><span class="timestamp"></span></div>
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="7th Meal"><span class="checkbox-label">7th Meal</span><span class="timestamp"></span></div>
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="8th Meal"><span class="checkbox-label">8th Meal</span><span class="timestamp"></span></div>
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="9th Meal"><span class="checkbox-label">9th Meal</span><span class="timestamp"></span></div>
-    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="10th Meal"><span class="checkbox-label">10th Meal</span><span class="timestamp"></span></div>
+  <div id="checkboxGroup" class="checkbox-group"></div>
+
+  <div class="bottom-controls">
+    <button id="addMealBtn">+ Add</button>
+    <button id="resetBtn">Reset All</button>
+    <button id="computeBtn">Compute</button>
   </div>
 
-  <br />
-  <button id="addMealBtn">+ Add</button>
+  <div id="summarySection">
+    <h3>Summary</h3>
+    <p id="summaryOnline">• Total Online: ...</p>
+    <p id="summaryDeliveries">• Total Deliveries: ...</p>
+    <p id="summaryMileage">• Total Mileage: ...</p>
+  </div>
 </body>
 </html>
