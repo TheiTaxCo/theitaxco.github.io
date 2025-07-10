@@ -18,14 +18,6 @@
       text-align: center;
     }
 
-    h1 {
-      color: #2c3e50;
-    }
-
-    h2 {
-      color: #3498db;
-    }
-
     table {
       border-collapse: collapse;
       width: 100%;
@@ -44,20 +36,12 @@
       background-color: #ecf0f1;
     }
 
-    .checkbox-group {
-      max-width: 600px;
-      margin-top: 20px;
-    }
-
-    .checkbox-group label {
+    .controls {
       display: flex;
-      justify-content: space-between;
       align-items: center;
-      background-color: white;
-      padding: 8px 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      margin-bottom: 8px;
+      gap: 10px;
+      margin-bottom: 20px;
+      flex-wrap: wrap;
     }
 
     button {
@@ -72,60 +56,166 @@
     button:hover {
       background-color: #27ae60;
     }
+
+    .checkbox-group {
+      max-width: 600px;
+      margin-top: 20px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .checkbox-group label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      background-color: white;
+      padding: 8px 12px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      margin-bottom: 8px;
+    }
+
+    .timestamp {
+      font-size: 0.9em;
+      color: #555;
+    }
   </style>
+
   <script>
-    function copyText1() {
-      navigator.clipboard.writeText("Thank you for your support and generous tip! Have a blessed evening");
+    const MAX_MEALS = 25;
+    let mealCount = 10;
+
+    function formatNow() {
+      return new Date().toLocaleString();
+    }
+
+    function saveState() {
+      const state = {
+        meals: [],
+        startTime: document.getElementById('startTime').textContent,
+        endTime: document.getElementById('endTime').textContent
+      };
+      document.querySelectorAll('.task-checkbox').forEach((cb, i) => {
+        state.meals.push({
+          label: cb.dataset.label,
+          checked: cb.checked,
+          timestamp: cb.nextElementSibling.textContent
+        });
+      });
+      localStorage.setItem('deliveryAppState', JSON.stringify(state));
+    }
+
+    function loadState() {
+      const saved = JSON.parse(localStorage.getItem('deliveryAppState'));
+      if (saved) {
+        document.getElementById('startTime').textContent = saved.startTime || '';
+        document.getElementById('endTime').textContent = saved.endTime || '';
+        saved.meals.forEach((meal, index) => {
+          if (index > mealCount - 1) addMeal(); // Add more if needed
+          const cb = document.querySelectorAll('.task-checkbox')[index];
+          cb.dataset.label = meal.label;
+          cb.checked = meal.checked;
+          cb.nextElementSibling.textContent = meal.timestamp;
+          cb.parentElement.firstChild.textContent = meal.label + ' ';
+        });
+        mealCount = saved.meals.length;
+      }
+    }
+
+    function addMeal() {
+      if (mealCount >= MAX_MEALS) return;
+
+      mealCount++;
+      const group = document.getElementById('checkboxGroup');
+      const label = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.className = 'task-checkbox';
+      cb.dataset.label = `${mealCount}th Meal`;
+
+      const span = document.createElement('span');
+      span.className = 'timestamp';
+
+      label.textContent = `${mealCount}th Meal `;
+      label.appendChild(cb);
+      label.appendChild(span);
+      group.appendChild(label);
+
+      cb.addEventListener('click', onCheckboxClick);
+      saveState();
+    }
+
+    function onCheckboxClick(e) {
+      const timestampSpan = e.target.nextElementSibling;
+      timestampSpan.textContent = e.target.checked ? "Accepted on: " + formatNow() : "";
+      saveState();
     }
 
     window.addEventListener('DOMContentLoaded', () => {
-      document.querySelectorAll('.task-checkbox').forEach(function (checkbox) {
-        checkbox.addEventListener('click', function (event) {
-          const timestampSpan = event.target.nextElementSibling;
-          if (event.target.checked) {
-            const now = new Date();
-            const formattedTimestamp = now.toLocaleString();
-            timestampSpan.textContent = "Accepted on: " + formattedTimestamp;
-          } else {
-            timestampSpan.textContent = "";
-          }
-        });
+      loadState();
+
+      document.querySelectorAll('.task-checkbox').forEach(cb => {
+        cb.addEventListener('click', onCheckboxClick);
       });
+
+      document.getElementById('startBtn').addEventListener('click', () => {
+        document.getElementById('startTime').textContent = formatNow();
+        saveState();
+      });
+
+      document.getElementById('endBtn').addEventListener('click', () => {
+        document.getElementById('endTime').textContent = formatNow();
+        saveState();
+      });
+
+      document.getElementById('addMealBtn').addEventListener('click', addMeal);
     });
+
+    function copyText1() {
+      navigator.clipboard.writeText("Thank you for your support and generous tip! Have a blessed evening");
+    }
   </script>
 </head>
+
 <body>
   <h1>Grubhub Deliveries</h1>
   <h2>Thank You Message</h2>
 
   <table>
     <tr>
-      <th>Occasion Message</th>
-      <th>Message Type</th>
-      <th>Directed To</th>
-      <th>Description</th>
+      <th>Start Deliveries</th>
+      <th>Odometer Begin</th>
+      <th>Odometer End</th>
+      <th>End Deliveries</th>
     </tr>
     <tr>
-      <td width="200">Delivery Completed</td>
-      <td width="300">Evening Message</td>
-      <td width="300">Uber Deliveries</td>
-      <td width="500">Message is for Thank you for the Tips!</td>
+      <td id="startTime"></td>
+      <td></td>
+      <td></td>
+      <td id="endTime"></td>
     </tr>
   </table>
 
-  <button type="button" onclick="copyText1()">Copy Thank You Message</button>
-
-  <div class="checkbox-group">
-    <label><input type="checkbox" class="task-checkbox">1st Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox">2nd Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox">3rd Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox">4th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox">5th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox">6th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox">7th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox">8th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox">9th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox">10th Meal <span class="timestamp"></span></label>
+  <div class="controls">
+    <button onclick="copyText1()">Copy Thank You Message</button>
+    <button id="startBtn">Start</button>
+    <button id="endBtn">End</button>
   </div>
+
+  <div id="checkboxGroup" class="checkbox-group">
+    <label><input type="checkbox" class="task-checkbox" data-label="1st Meal">1st Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox" data-label="2nd Meal">2nd Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox" data-label="3rd Meal">3rd Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox" data-label="4th Meal">4th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox" data-label="5th Meal">5th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox" data-label="6th Meal">6th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox" data-label="7th Meal">7th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox" data-label="8th Meal">8th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox" data-label="9th Meal">9th Meal <span class="timestamp"></span></label>
+    <label><input type="checkbox" class="task-checkbox" data-label="10th Meal">10th Meal <span class="timestamp"></span></label>
+  </div>
+
+  <br />
+  <button id="addMealBtn">+ Add</button>
 </body>
 </html>
