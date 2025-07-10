@@ -206,21 +206,32 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("resetBtn").onclick = resetAll;
   document.getElementById("computeBtn").onclick = computeSummary;
 
-  // ✅ Scroll-jiggle trick to reset mobile zoom after blur
+  // ✅ Mobile zoom-reset logic with proper input focus detection
+  let isFocusingInput = false;
+
   document.querySelectorAll('input[type="number"]').forEach((input) => {
+    input.addEventListener("focus", () => {
+      isFocusingInput = true;
+    });
+
     input.addEventListener("blur", () => {
-      if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
-        setTimeout(() => {
-          const active = document.activeElement;
-          const stillEditing =
-            active && active.tagName === "INPUT" && active.type === "number";
-          if (!stillEditing) {
+      setTimeout(() => {
+        const active = document.activeElement;
+        const isStillInInput =
+          active && active.tagName === "INPUT" && active.type === "number";
+
+        if (!isStillInInput) {
+          isFocusingInput = false;
+        }
+
+        if (!isFocusingInput && !isStillInInput) {
+          if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
             const scrollY = window.scrollY;
             window.scrollTo(0, scrollY + 1);
             window.scrollTo(0, scrollY);
           }
-        }, 200);
-      }
+        }
+      }, 200);
     });
   });
 });
