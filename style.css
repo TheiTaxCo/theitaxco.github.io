@@ -139,6 +139,7 @@ button {
 .btn-secondary:active {
   background-color: #27ae60;
   border-color: #27ae60;
+  color: white;
 }
 
 .btn-tertiary {
