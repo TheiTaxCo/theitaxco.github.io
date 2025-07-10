@@ -201,4 +201,21 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("addMealBtn").onclick = () => addMeal();
   document.getElementById("resetBtn").onclick = resetAll;
   document.getElementById("computeBtn").onclick = computeSummary;
+
+  document.querySelectorAll('input[type="number"]').forEach((input) => {
+    input.addEventListener("focus", () => {
+      document.body.style.zoom = "1"; // Optional: prevent accidental zoom-in
+    });
+
+    input.addEventListener("blur", () => {
+      // Delay to allow keyboard to fully close first
+      setTimeout(() => {
+        document.body.style.zoom = "reset";
+        document.body.style.transform = "none";
+        document.body.style.width = "100%";
+        document.body.style.position = "relative";
+        window.scrollTo(0, 0); // Optional: scroll back to top
+      }, 200);
+    });
+  });
 });
