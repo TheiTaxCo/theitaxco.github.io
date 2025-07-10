@@ -188,39 +188,33 @@ function showToast(msg) {
 
 window.addEventListener("DOMContentLoaded", () => {
   loadState();
+
   document.getElementById("startBtn").onclick = () => {
     document.getElementById("startTime").textContent = formatNow();
     saveState();
   };
+
   document.getElementById("endBtn").onclick = () => {
     document.getElementById("endTime").textContent = formatNow();
     saveState();
   };
+
   document.getElementById("odoStart").oninput = saveState;
   document.getElementById("odoEnd").oninput = saveState;
+
   document.getElementById("addMealBtn").onclick = () => addMeal();
   document.getElementById("resetBtn").onclick = resetAll;
   document.getElementById("computeBtn").onclick = computeSummary;
 
+  // ✅ Scroll-jiggle trick to reset mobile zoom after blur
   document.querySelectorAll('input[type="number"]').forEach((input) => {
     input.addEventListener("blur", () => {
-      // Only run this on mobile devices
-      if (/Mobi|Android/i.test(navigator.userAgent)) {
-        const metaViewport = document.querySelector("meta[name=viewport]");
-        if (metaViewport) {
-          // Temporarily reset the viewport scale
-          metaViewport.setAttribute(
-            "content",
-            "width=device-width, initial-scale=1.0, maximum-scale=1.0"
-          );
-          // Restore after a short delay
-          setTimeout(() => {
-            metaViewport.setAttribute(
-              "content",
-              "width=device-width, initial-scale=1.0"
-            );
-          }, 300);
-        }
+      if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
+        setTimeout(() => {
+          const scrollY = window.scrollY;
+          window.scrollTo(0, scrollY + 1);
+          window.scrollTo(0, scrollY);
+        }, 200);
       }
     });
   });
