@@ -211,9 +211,14 @@ window.addEventListener("DOMContentLoaded", () => {
     input.addEventListener("blur", () => {
       if (/Mobi|Android|iPhone|iPad/i.test(navigator.userAgent)) {
         setTimeout(() => {
-          const scrollY = window.scrollY;
-          window.scrollTo(0, scrollY + 1);
-          window.scrollTo(0, scrollY);
+          const active = document.activeElement;
+          const stillEditing =
+            active && active.tagName === "INPUT" && active.type === "number";
+          if (!stillEditing) {
+            const scrollY = window.scrollY;
+            window.scrollTo(0, scrollY + 1);
+            window.scrollTo(0, scrollY);
+          }
         }, 200);
       }
     });
