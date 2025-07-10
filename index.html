@@ -1,335 +1,54 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Uber Deliveries</title>
-  <style>
-    body {
-      font-family: Arial, sans-serif;
-      background-color: #f9fafb;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      padding: 30px;
-    }
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Courier Deliveries</title>
+    <link rel="stylesheet" href="style.css" />
+  </head>
+  <body>
+    <h1>Courier Deliveries</h1>
 
-    h1 {
-      color: #2c3e50;
-      text-align: center;
-    }
+    <table>
+      <tr>
+        <th>Start Deliveries</th>
+        <th>Odometer Begin</th>
+        <th>Odometer End</th>
+        <th>End Deliveries</th>
+      </tr>
+      <tr>
+        <td id="startTime"></td>
+        <td><input type="number" id="odoStart" inputmode="numeric" /></td>
+        <td><input type="number" id="odoEnd" inputmode="numeric" /></td>
+        <td id="endTime"></td>
+      </tr>
+    </table>
 
-    table {
-      border-collapse: collapse;
-      width: 100%;
-      max-width: 800px;
-      margin-bottom: 20px;
-      background-color: white;
-    }
+    <div class="controls">
+      <button class="btn-quaternary" onclick="copyText1()">
+        Copy Thank You Message
+      </button>
+      <button id="startBtn" class="btn-primary">Start</button>
+      <button id="endBtn" class="btn-secondary">End</button>
+    </div>
 
-    th, td {
-      border: 1px solid gray;
-      padding: 8px 12px;
-      text-align: left;
-    }
+    <div id="checkboxGroup" class="checkbox-group"></div>
 
-    th {
-      background-color: #ecf0f1;
-    }
+    <div class="bottom-controls">
+      <button id="addMealBtn" class="btn-primary">+ Add</button>
+      <button id="resetBtn" class="btn-secondary">Reset All</button>
+      <button id="computeBtn" class="btn-tertiary">Compute</button>
+    </div>
 
-    input[type="text"] {
-      width: 100%;
-      padding: 6px;
-      box-sizing: border-box;
-    }
+    <div id="summarySection">
+      <h3>Summary</h3>
+      <p id="summaryOnline">• Total Online: ...</p>
+      <p id="summaryDeliveries">• Total Deliveries: ...</p>
+      <p id="summaryMileage">• Total Mileage: ...</p>
+    </div>
 
-    .controls, .bottom-controls {
-      display: flex;
-      flex-wrap: wrap;
-      gap: 10px;
-      justify-content: center;
-      margin-top: 10px;
-    }
+    <div id="customToast"></div>
 
-    button {
-      background-color: #2ecc71;
-      color: white;
-      border: none;
-      padding: 10px 20px;
-      border-radius: 5px;
-      cursor: pointer;
-    }
-
-    button:hover {
-      background-color: #27ae60;
-    }
-
-    .checkbox-group {
-      max-width: 600px;
-      width: 100%;
-      margin-top: 20px;
-    }
-
-    .checkbox-row {
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      background-color: white;
-      padding: 10px 12px;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      margin-bottom: 8px;
-      position: relative;
-    }
-
-    .checkbox-left {
-      display: flex;
-      align-items: center;
-      gap: 10px;
-    }
-
-    .checkbox-label {
-      font-size: 16px;
-    }
-
-    .timestamp {
-      font-size: 0.85em;
-      color: #555;
-      white-space: nowrap;
-    }
-
-    .remove-btn {
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      height: 100%;
-      padding: 0 10px;
-      background: none;
-      border: none;
-      font-size: 18px;
-      color: #888;
-      cursorz: pointer;
-      position: absolute;
-      top: 0;
-      right:0;
-    }
-
-    .remove-btn:hover {
-      color: #e74c3c;
-    }
-
-    #summarySection {
-      display: none;
-      max-width: 600px;
-      margin-top: 30px;
-      background: #ffffff;
-      border: 1px solid #ccc;
-      border-radius: 6px;
-      padding: 15px;
-    }
-  </style>
-</head>
-
-<body>
-  <h1>Grubhub Deliveries</h1>
-
-  <table>
-    <tr>
-      <th>Start Deliveries</th>
-      <th>Odometer Begin</th>
-      <th>Odometer End</th>
-      <th>End Deliveries</th>
-    </tr>
-    <tr>
-      <td id="startTime"></td>
-      <td><input type="text" id="odoStart" /></td>
-      <td><input type="text" id="odoEnd" /></td>
-      <td id="endTime"></td>
-    </tr>
-  </table>
-
-  <div class="controls">
-    <button onclick="copyText1()">Copy Thank You Message</button>
-    <button id="startBtn">Start</button>
-    <button id="endBtn">End</button>
-  </div>
-
-  <div id="checkboxGroup" class="checkbox-group"></div>
-
-  <div class="bottom-controls">
-    <button id="addMealBtn">+ Add</button>
-    <button id="resetBtn">Reset All</button>
-    <button id="computeBtn">Compute</button>
-  </div>
-
-  <div id="summarySection">
-    <h3>Summary</h3>
-    <p id="summaryOnline">• Total Online: ...</p>
-    <p id="summaryDeliveries">• Total Deliveries: ...</p>
-    <p id="summaryMileage">• Total Mileage: ...</p>
-  </div>
-
-  <script>
-    const MAX_MEALS = 25;
-
-    function formatNow() {
-      return new Date().toLocaleString();
-    }
-
-    function saveState() {
-      const state = {
-        meals: [],
-        startTime: document.getElementById('startTime').textContent,
-        endTime: document.getElementById('endTime').textContent,
-        odometerStart: document.getElementById('odoStart').value,
-        odometerEnd: document.getElementById('odoEnd').value
-      };
-      document.querySelectorAll('.task-checkbox').forEach(cb => {
-        const row = cb.closest('.checkbox-row');
-        state.meals.push({
-          label: cb.dataset.label,
-          checked: cb.checked,
-          timestamp: row.querySelector('.timestamp').textContent
-        });
-      });
-      localStorage.setItem('deliveryAppState', JSON.stringify(state));
-    }
-
-    function loadState() {
-      const saved = JSON.parse(localStorage.getItem('deliveryAppState'));
-      if (saved) {
-        document.getElementById('startTime').textContent = saved.startTime || '';
-        document.getElementById('endTime').textContent = saved.endTime || '';
-        document.getElementById('odoStart').value = saved.odometerStart || '';
-        document.getElementById('odoEnd').value = saved.odometerEnd || '';
-        document.getElementById('checkboxGroup').innerHTML = '';
-        saved.meals.forEach((meal, i) => addMeal(meal.label, meal.checked, meal.timestamp));
-      } else {
-        addMeal("1st Meal");
-      }
-    }
-
-    function addMeal(label = null, isChecked = false, timestampValue = "") {
-      const count = document.querySelectorAll('.checkbox-row').length;
-      if (count >= MAX_MEALS) return;
-
-      const group = document.getElementById('checkboxGroup');
-      const row = document.createElement('div');
-      row.className = 'checkbox-row';
-
-      const left = document.createElement('div');
-      left.className = 'checkbox-left';
-
-      const checkbox = document.createElement('input');
-      checkbox.type = 'checkbox';
-      checkbox.className = 'task-checkbox';
-
-      const mealLabel = label || `${count + 1}${ordinalSuffix(count + 1)} Meal`;
-      checkbox.dataset.label = mealLabel;
-      checkbox.checked = isChecked;
-
-      const labelSpan = document.createElement('span');
-      labelSpan.className = 'checkbox-label';
-      labelSpan.textContent = mealLabel;
-
-      const timestamp = document.createElement('span');
-      timestamp.className = 'timestamp';
-      timestamp.textContent = timestampValue;
-
-      const removeBtn = document.createElement('button');
-      removeBtn.className = 'remove-btn';
-      removeBtn.innerHTML = '&times;';
-      removeBtn.style.display = (count > 0 && !isChecked && !timestampValue) ? 'inline' : 'none';
-      removeBtn.onclick = () => {
-        group.removeChild(row);
-        saveState();
-      };
-
-      checkbox.addEventListener('click', () => {
-        timestamp.textContent = checkbox.checked ? "Accepted on: " + formatNow() : "";
-        removeBtn.style.display = (!checkbox.checked && !timestamp.textContent && count > 0) ? 'inline' : 'none';
-        saveState();
-      });
-
-      left.appendChild(checkbox);
-      left.appendChild(labelSpan);
-      left.appendChild(timestamp);
-
-      row.appendChild(left);
-      row.appendChild(removeBtn);
-      group.appendChild(row);
-      saveState();
-    }
-
-    function ordinalSuffix(i) {
-      const j = i % 10, k = i % 100;
-      if (j == 1 && k != 11) return "st";
-      if (j == 2 && k != 12) return "nd";
-      if (j == 3 && k != 13) return "rd";
-      return "th";
-    }
-
-    function resetAll() {
-      localStorage.removeItem('deliveryAppState');
-      document.getElementById('startTime').textContent = '';
-      document.getElementById('endTime').textContent = '';
-      document.getElementById('odoStart').value = '';
-      document.getElementById('odoEnd').value = '';
-      document.getElementById('summarySection').style.display = 'none';
-      document.getElementById('checkboxGroup').innerHTML = '';
-      addMeal("1st Meal");
-    }
-
-    function copyText1() {
-      navigator.clipboard.writeText("Thank you for your support and generous tip! Have a blessed evening");
-    }
-
-    function computeSummary() {
-      const startText = document.getElementById('startTime').textContent;
-      const endText = document.getElementById('endTime').textContent;
-      const odoStart = parseFloat(document.getElementById('odoStart').value);
-      const odoEnd = parseFloat(document.getElementById('odoEnd').value);
-      const summary = document.getElementById('summarySection');
-
-      let onlineText = "Pending";
-      if (startText) {
-        const startTime = new Date(startText);
-        const endTime = endText ? new Date(endText) : new Date();
-        const diffMs = endTime - startTime;
-        const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-        const diffMin = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-        onlineText = `${diffHrs} hour${diffHrs !== 1 ? 's' : ''} ${diffMin} minute${diffMin !== 1 ? 's' : ''}`;
-      }
-
-      const totalDeliveries = document.querySelectorAll('.task-checkbox:checked').length;
-
-      let mileageText = "Pending";
-      if (!isNaN(odoStart) && !isNaN(odoEnd) && odoEnd > odoStart) {
-        mileageText = `${(odoEnd - odoStart).toFixed(1)} Miles`;
-      }
-
-      document.getElementById('summaryOnline').textContent = `• Total Online: ${onlineText}`;
-      document.getElementById('summaryDeliveries').textContent = `• Total Deliveries: ${totalDeliveries} Deliveries`;
-      document.getElementById('summaryMileage').textContent = `• Total Mileage: ${mileageText}`;
-      summary.style.display = "block";
-    }
-
-    window.addEventListener('DOMContentLoaded', () => {
-      loadState();
-      document.getElementById('startBtn').onclick = () => {
-        document.getElementById('startTime').textContent = formatNow();
-        saveState();
-      };
-      document.getElementById('endBtn').onclick = () => {
-        document.getElementById('endTime').textContent = formatNow();
-        saveState();
-      };
-      document.getElementById('odoStart').oninput = saveState;
-      document.getElementById('odoEnd').oninput = saveState;
-      document.getElementById('addMealBtn').onclick = () => addMeal();
-      document.getElementById('resetBtn').onclick = resetAll;
-      document.getElementById('computeBtn').onclick = computeSummary;
-    });
-  </script>
-</body>
+    <script src="script.js"></script>
+  </body>
 </html>
