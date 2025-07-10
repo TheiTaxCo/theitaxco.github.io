@@ -14,7 +14,8 @@
       padding: 30px;
     }
 
-    h1, h2 {
+    h1 {
+      color: #2c3e50;
       text-align: center;
     }
 
@@ -36,12 +37,18 @@
       background-color: #ecf0f1;
     }
 
+    input[type="text"] {
+      width: 100%;
+      padding: 6px;
+      box-sizing: border-box;
+    }
+
     .controls {
       display: flex;
-      align-items: center;
+      flex-wrap: wrap;
       gap: 10px;
       margin-bottom: 20px;
-      flex-wrap: wrap;
+      justify-content: center;
     }
 
     button {
@@ -59,25 +66,31 @@
 
     .checkbox-group {
       max-width: 600px;
+      width: 100%;
       margin-top: 20px;
-      display: flex;
-      flex-direction: column;
     }
 
-    .checkbox-group label {
+    .checkbox-row {
       display: flex;
       justify-content: space-between;
       align-items: center;
       background-color: white;
-      padding: 8px 12px;
+      padding: 10px 12px;
       border: 1px solid #ccc;
       border-radius: 4px;
       margin-bottom: 8px;
     }
 
+    .checkbox-label {
+      flex: 1;
+      font-size: 16px;
+    }
+
     .timestamp {
-      font-size: 0.9em;
+      font-size: 0.85em;
       color: #555;
+      margin-left: 10px;
+      white-space: nowrap;
     }
   </style>
 
@@ -93,13 +106,15 @@
       const state = {
         meals: [],
         startTime: document.getElementById('startTime').textContent,
-        endTime: document.getElementById('endTime').textContent
+        endTime: document.getElementById('endTime').textContent,
+        odometerStart: document.getElementById('odoStart').value,
+        odometerEnd: document.getElementById('odoEnd').value
       };
-      document.querySelectorAll('.task-checkbox').forEach((cb, i) => {
+      document.querySelectorAll('.task-checkbox').forEach(cb => {
         state.meals.push({
           label: cb.dataset.label,
           checked: cb.checked,
-          timestamp: cb.nextElementSibling.textContent
+          timestamp: cb.closest('.checkbox-row').querySelector('.timestamp').textContent
         });
       });
       localStorage.setItem('deliveryAppState', JSON.stringify(state));
@@ -110,13 +125,16 @@
       if (saved) {
         document.getElementById('startTime').textContent = saved.startTime || '';
         document.getElementById('endTime').textContent = saved.endTime || '';
+        document.getElementById('odoStart').value = saved.odometerStart || '';
+        document.getElementById('odoEnd').value = saved.odometerEnd || '';
         saved.meals.forEach((meal, index) => {
-          if (index > mealCount - 1) addMeal(); // Add more if needed
+          if (index >= mealCount) addMeal(); // dynamically add as needed
           const cb = document.querySelectorAll('.task-checkbox')[index];
+          const row = cb.closest('.checkbox-row');
           cb.dataset.label = meal.label;
           cb.checked = meal.checked;
-          cb.nextElementSibling.textContent = meal.timestamp;
-          cb.parentElement.firstChild.textContent = meal.label + ' ';
+          row.querySelector('.checkbox-label').textContent = meal.label;
+          row.querySelector('.timestamp').textContent = meal.timestamp;
         });
         mealCount = saved.meals.length;
       }
@@ -127,27 +145,32 @@
 
       mealCount++;
       const group = document.getElementById('checkboxGroup');
-      const label = document.createElement('label');
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.className = 'task-checkbox';
-      cb.dataset.label = `${mealCount}th Meal`;
 
-      const span = document.createElement('span');
-      span.className = 'timestamp';
+      const row = document.createElement('div');
+      row.className = 'checkbox-row';
 
-      label.textContent = `${mealCount}th Meal `;
-      label.appendChild(cb);
-      label.appendChild(span);
-      group.appendChild(label);
+      const label = document.createElement('span');
+      label.className = 'checkbox-label';
+      label.textContent = `${mealCount}th Meal`;
 
-      cb.addEventListener('click', onCheckboxClick);
-      saveState();
-    }
+      const checkbox = document.createElement('input');
+      checkbox.type = 'checkbox';
+      checkbox.className = 'task-checkbox';
+      checkbox.dataset.label = `${mealCount}th Meal`;
 
-    function onCheckboxClick(e) {
-      const timestampSpan = e.target.nextElementSibling;
-      timestampSpan.textContent = e.target.checked ? "Accepted on: " + formatNow() : "";
+      const timestamp = document.createElement('span');
+      timestamp.className = 'timestamp';
+
+      checkbox.addEventListener('click', () => {
+        timestamp.textContent = checkbox.checked ? "Accepted on: " + formatNow() : "";
+        saveState();
+      });
+
+      row.appendChild(checkbox);
+      row.appendChild(label);
+      row.appendChild(timestamp);
+      group.appendChild(row);
+
       saveState();
     }
 
@@ -155,7 +178,11 @@
       loadState();
 
       document.querySelectorAll('.task-checkbox').forEach(cb => {
-        cb.addEventListener('click', onCheckboxClick);
+        cb.addEventListener('click', e => {
+          const timestamp = e.target.closest('.checkbox-row').querySelector('.timestamp');
+          timestamp.textContent = cb.checked ? "Accepted on: " + formatNow() : "";
+          saveState();
+        });
       });
 
       document.getElementById('startBtn').addEventListener('click', () => {
@@ -168,6 +195,8 @@
         saveState();
       });
 
+      document.getElementById('odoStart').addEventListener('input', saveState);
+      document.getElementById('odoEnd').addEventListener('input', saveState);
       document.getElementById('addMealBtn').addEventListener('click', addMeal);
     });
 
@@ -179,7 +208,6 @@
 
 <body>
   <h1>Grubhub Deliveries</h1>
-  <h2>Thank You Message</h2>
 
   <table>
     <tr>
@@ -190,8 +218,8 @@
     </tr>
     <tr>
       <td id="startTime"></td>
-      <td></td>
-      <td></td>
+      <td><input type="text" id="odoStart" placeholder="Enter Odometer Start" /></td>
+      <td><input type="text" id="odoEnd" placeholder="Enter Odometer End" /></td>
       <td id="endTime"></td>
     </tr>
   </table>
@@ -203,16 +231,16 @@
   </div>
 
   <div id="checkboxGroup" class="checkbox-group">
-    <label><input type="checkbox" class="task-checkbox" data-label="1st Meal">1st Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox" data-label="2nd Meal">2nd Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox" data-label="3rd Meal">3rd Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox" data-label="4th Meal">4th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox" data-label="5th Meal">5th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox" data-label="6th Meal">6th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox" data-label="7th Meal">7th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox" data-label="8th Meal">8th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox" data-label="9th Meal">9th Meal <span class="timestamp"></span></label>
-    <label><input type="checkbox" class="task-checkbox" data-label="10th Meal">10th Meal <span class="timestamp"></span></label>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="1st Meal"><span class="checkbox-label">1st Meal</span><span class="timestamp"></span></div>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="2nd Meal"><span class="checkbox-label">2nd Meal</span><span class="timestamp"></span></div>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="3rd Meal"><span class="checkbox-label">3rd Meal</span><span class="timestamp"></span></div>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="4th Meal"><span class="checkbox-label">4th Meal</span><span class="timestamp"></span></div>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="5th Meal"><span class="checkbox-label">5th Meal</span><span class="timestamp"></span></div>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="6th Meal"><span class="checkbox-label">6th Meal</span><span class="timestamp"></span></div>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="7th Meal"><span class="checkbox-label">7th Meal</span><span class="timestamp"></span></div>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="8th Meal"><span class="checkbox-label">8th Meal</span><span class="timestamp"></span></div>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="9th Meal"><span class="checkbox-label">9th Meal</span><span class="timestamp"></span></div>
+    <div class="checkbox-row"><input type="checkbox" class="task-checkbox" data-label="10th Meal"><span class="checkbox-label">10th Meal</span><span class="timestamp"></span></div>
   </div>
 
   <br />
