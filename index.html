@@ -43,20 +43,12 @@
       box-sizing: border-box;
     }
 
-    .controls {
+    .controls, .bottom-controls {
       display: flex;
       flex-wrap: wrap;
       gap: 10px;
-      margin-bottom: 20px;
       justify-content: center;
-    }
-
-    .bottom-controls {
-      margin-top: 20px;
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-      justify-content: center;
+      margin-top: 10px;
     }
 
     button {
@@ -103,7 +95,6 @@
     .timestamp {
       font-size: 0.85em;
       color: #555;
-      margin-left: 10px;
       white-space: nowrap;
     }
 
@@ -132,10 +123,49 @@
       padding: 15px;
     }
   </style>
+</head>
+
+<body>
+  <h1>Grubhub Deliveries</h1>
+
+  <table>
+    <tr>
+      <th>Start Deliveries</th>
+      <th>Odometer Begin</th>
+      <th>Odometer End</th>
+      <th>End Deliveries</th>
+    </tr>
+    <tr>
+      <td id="startTime"></td>
+      <td><input type="text" id="odoStart" /></td>
+      <td><input type="text" id="odoEnd" /></td>
+      <td id="endTime"></td>
+    </tr>
+  </table>
+
+  <div class="controls">
+    <button onclick="copyText1()">Copy Thank You Message</button>
+    <button id="startBtn">Start</button>
+    <button id="endBtn">End</button>
+  </div>
+
+  <div id="checkboxGroup" class="checkbox-group"></div>
+
+  <div class="bottom-controls">
+    <button id="addMealBtn">+ Add</button>
+    <button id="resetBtn">Reset All</button>
+    <button id="computeBtn">Compute</button>
+  </div>
+
+  <div id="summarySection">
+    <h3>Summary</h3>
+    <p id="summaryOnline">• Total Online: ...</p>
+    <p id="summaryDeliveries">• Total Deliveries: ...</p>
+    <p id="summaryMileage">• Total Mileage: ...</p>
+  </div>
 
   <script>
     const MAX_MEALS = 25;
-    let mealCount = 10;
 
     function formatNow() {
       return new Date().toLocaleString();
@@ -167,26 +197,17 @@
         document.getElementById('endTime').textContent = saved.endTime || '';
         document.getElementById('odoStart').value = saved.odometerStart || '';
         document.getElementById('odoEnd').value = saved.odometerEnd || '';
-        saved.meals.forEach((meal, index) => {
-          if (index >= mealCount) addMeal();
-          const cb = document.querySelectorAll('.task-checkbox')[index];
-          const row = cb.closest('.checkbox-row');
-          cb.dataset.label = meal.label;
-          cb.checked = meal.checked;
-          row.querySelector('.checkbox-label').textContent = meal.label;
-          row.querySelector('.timestamp').textContent = meal.timestamp;
-
-          const removeBtn = row.querySelector('.remove-btn');
-          removeBtn.style.display = (!cb.checked && !meal.timestamp) ? 'inline' : 'none';
-        });
-        mealCount = saved.meals.length;
+        document.getElementById('checkboxGroup').innerHTML = '';
+        saved.meals.forEach((meal, i) => addMeal(meal.label, meal.checked, meal.timestamp));
+      } else {
+        addMeal("1st Meal");
       }
     }
 
-    function addMeal(labelOverride = null) {
-      if (mealCount >= MAX_MEALS) return;
+    function addMeal(label = null, isChecked = false, timestampValue = "") {
+      const count = document.querySelectorAll('.checkbox-row').length;
+      if (count >= MAX_MEALS) return;
 
-      mealCount++;
       const group = document.getElementById('checkboxGroup');
       const row = document.createElement('div');
       row.className = 'checkbox-row';
@@ -197,44 +218,50 @@
       const checkbox = document.createElement('input');
       checkbox.type = 'checkbox';
       checkbox.className = 'task-checkbox';
-      const labelText = labelOverride || `${mealCount}th Meal`;
-      checkbox.dataset.label = labelText;
 
-      const label = document.createElement('span');
-      label.className = 'checkbox-label';
-      label.textContent = labelText;
+      const mealLabel = label || `${count + 1}${ordinalSuffix(count + 1)} Meal`;
+      checkbox.dataset.label = mealLabel;
+      checkbox.checked = isChecked;
+
+      const labelSpan = document.createElement('span');
+      labelSpan.className = 'checkbox-label';
+      labelSpan.textContent = mealLabel;
 
       const timestamp = document.createElement('span');
       timestamp.className = 'timestamp';
+      timestamp.textContent = timestampValue;
 
       const removeBtn = document.createElement('button');
       removeBtn.className = 'remove-btn';
       removeBtn.innerHTML = '&times;';
+      removeBtn.style.display = (count > 0 && !isChecked && !timestampValue) ? 'inline' : 'none';
       removeBtn.onclick = () => {
         group.removeChild(row);
-        updateMealCount();
         saveState();
       };
 
       checkbox.addEventListener('click', () => {
         timestamp.textContent = checkbox.checked ? "Accepted on: " + formatNow() : "";
-        removeBtn.style.display = (!checkbox.checked && !timestamp.textContent) ? 'inline' : 'none';
+        removeBtn.style.display = (!checkbox.checked && !timestamp.textContent && count > 0) ? 'inline' : 'none';
         saveState();
       });
 
       left.appendChild(checkbox);
-      left.appendChild(label);
+      left.appendChild(labelSpan);
       left.appendChild(timestamp);
 
       row.appendChild(left);
       row.appendChild(removeBtn);
-
       group.appendChild(row);
       saveState();
     }
 
-    function updateMealCount() {
-      mealCount = document.querySelectorAll('.task-checkbox').length;
+    function ordinalSuffix(i) {
+      const j = i % 10, k = i % 100;
+      if (j == 1 && k != 11) return "st";
+      if (j == 2 && k != 12) return "nd";
+      if (j == 3 && k != 13) return "rd";
+      return "th";
     }
 
     function resetAll() {
@@ -244,12 +271,8 @@
       document.getElementById('odoStart').value = '';
       document.getElementById('odoEnd').value = '';
       document.getElementById('summarySection').style.display = 'none';
-      const group = document.getElementById('checkboxGroup');
-      group.innerHTML = '';
-      mealCount = 0;
-      for (let i = 1; i <= 10; i++) {
-        addMeal(`${i}th Meal`);
-      }
+      document.getElementById('checkboxGroup').innerHTML = '';
+      addMeal("1st Meal");
     }
 
     function copyText1() {
@@ -288,74 +311,20 @@
 
     window.addEventListener('DOMContentLoaded', () => {
       loadState();
-
-      document.querySelectorAll('.task-checkbox').forEach(cb => {
-        cb.addEventListener('click', e => {
-          const row = cb.closest('.checkbox-row');
-          const timestamp = row.querySelector('.timestamp');
-          const removeBtn = row.querySelector('.remove-btn');
-          timestamp.textContent = cb.checked ? "Accepted on: " + formatNow() : "";
-          removeBtn.style.display = (!cb.checked && !timestamp.textContent) ? 'inline' : 'none';
-          saveState();
-        });
-      });
-
-      document.getElementById('startBtn').addEventListener('click', () => {
+      document.getElementById('startBtn').onclick = () => {
         document.getElementById('startTime').textContent = formatNow();
         saveState();
-      });
-
-      document.getElementById('endBtn').addEventListener('click', () => {
+      };
+      document.getElementById('endBtn').onclick = () => {
         document.getElementById('endTime').textContent = formatNow();
         saveState();
-      });
-
-      document.getElementById('odoStart').addEventListener('input', saveState);
-      document.getElementById('odoEnd').addEventListener('input', saveState);
-      document.getElementById('addMealBtn').addEventListener('click', addMeal);
-      document.getElementById('resetBtn').addEventListener('click', resetAll);
-      document.getElementById('computeBtn').addEventListener('click', computeSummary);
+      };
+      document.getElementById('odoStart').oninput = saveState;
+      document.getElementById('odoEnd').oninput = saveState;
+      document.getElementById('addMealBtn').onclick = () => addMeal();
+      document.getElementById('resetBtn').onclick = resetAll;
+      document.getElementById('computeBtn').onclick = computeSummary;
     });
   </script>
-</head>
-
-<body>
-  <h1>Grubhub Deliveries</h1>
-
-  <table>
-    <tr>
-      <th>Start Deliveries</th>
-      <th>Odometer Begin</th>
-      <th>Odometer End</th>
-      <th>End Deliveries</th>
-    </tr>
-    <tr>
-      <td id="startTime"></td>
-      <td><input type="text" id="odoStart" placeholder="Enter Odometer Start" /></td>
-      <td><input type="text" id="odoEnd" placeholder="Enter Odometer End" /></td>
-      <td id="endTime"></td>
-    </tr>
-  </table>
-
-  <div class="controls">
-    <button onclick="copyText1()">Copy Thank You Message</button>
-    <button id="startBtn">Start</button>
-    <button id="endBtn">End</button>
-  </div>
-
-  <div id="checkboxGroup" class="checkbox-group"></div>
-
-  <div class="bottom-controls">
-    <button id="addMealBtn">+ Add</button>
-    <button id="resetBtn">Reset All</button>
-    <button id="computeBtn">Compute</button>
-  </div>
-
-  <div id="summarySection">
-    <h3>Summary</h3>
-    <p id="summaryOnline">• Total Online: ...</p>
-    <p id="summaryDeliveries">• Total Deliveries: ...</p>
-    <p id="summaryMileage">• Total Mileage: ...</p>
-  </div>
 </body>
 </html>
