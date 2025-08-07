@@ -47,8 +47,49 @@
       <p id="summaryMileage">• Total Mileage: ...</p>
     </div>
 
+    <!-- Place this after #summaryMileage in #summarySection -->
+    <div id="earningsControls">
+      <button id="openEarningsBtn" class="btn-primary">Earnings</button>
+      <button id="exportJsonBtn" class="btn-primary">Export</button>
+    </div>
+
+    <!-- Slide-up sheet for Earnings -->
+    <div id="earningsSheet" class="slide-up hidden">
+      <div class="sheet-header">
+        <span>Earnings Summary</span>
+        <button id="closeEarningsBtn">&times;</button>
+      </div>
+      <p>
+        <label>Delivery Pay: <input type="number" id="deliveryPay" /></label>
+      </p>
+      <p>
+        <label>Tips: <input type="number" id="tipsPay" /></label>
+      </p>
+      <p>
+        <label
+          >Adjustment Pay: <input type="number" id="adjustmentPay"
+        /></label>
+      </p>
+      <p>
+        <strong>Total Earnings:</strong> <span id="totalEarnings">Pending</span>
+      </p>
+      <button id="calcEarningsBtn" class="btn-quaternary">Calculate</button>
+    </div>
+
     <div id="customToast"></div>
+
+    <div id="slideUpSheet" class="slide-up hidden">
+      <div class="sheet-header">
+        <span id="mealLabelInSheet"></span>
+        <button id="closeSheetBtn">&times;</button>
+      </div>
+      <p><strong>Accepted:</strong> <span id="acceptedTimeInSheet"></span></p>
+      <p><strong>Delivered:</strong> <span id="deliveredTimeInSheet"></span></p>
+      <p><strong>Duration:</strong> <span id="durationInSheet"></span></p>
+      <button class="btn-quaternary" id="markDeliveredBtn">Delivered</button>
+    </div>
 
     <script src="script.js"></script>
   </body>
 </html>
+
