@@ -1,7 +1,26 @@
 const MAX_MEALS = 25;
+let activeMealElements = null;
 
 function formatNow() {
   return new Date().toLocaleString();
+}
+
+function formatForExport(dateStr) {
+  const d = new Date(dateStr);
+  if (isNaN(d)) return "";
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}`;
+}
+
+function formatDuration(start, end) {
+  const diff = end - start;
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const hrs = Math.floor(diff / (1000 * 60 * 60));
+  return `${hrs} hour${hrs !== 1 ? "s" : ""} ${mins} minute${
+    mins !== 1 ? "s" : ""
+  }`;
 }
 
 function saveState() {
@@ -12,14 +31,22 @@ function saveState() {
     odometerStart: document.getElementById("odoStart").value,
     odometerEnd: document.getElementById("odoEnd").value,
   };
-  document.querySelectorAll(".task-checkbox").forEach((cb) => {
-    const row = cb.closest(".checkbox-row");
+
+  document.querySelectorAll(".checkbox-row").forEach((row) => {
+    const checkbox = row.querySelector(".task-checkbox");
+    const label = checkbox.dataset.label;
+    const timestamp = row.querySelector(".timestamp").textContent;
+    const delivered = row.dataset.delivered || "";
+    const duration = row.dataset.duration || "";
     state.meals.push({
-      label: cb.dataset.label,
-      checked: cb.checked,
-      timestamp: row.querySelector(".timestamp").textContent,
+      label,
+      checked: checkbox.checked,
+      timestamp,
+      delivered,
+      duration,
     });
   });
+
   localStorage.setItem("deliveryAppState", JSON.stringify(state));
 }
 
@@ -32,14 +59,26 @@ function loadState() {
     document.getElementById("odoEnd").value = saved.odometerEnd || "";
     document.getElementById("checkboxGroup").innerHTML = "";
     saved.meals.forEach((meal) =>
-      addMeal(meal.label, meal.checked, meal.timestamp)
+      addMeal(
+        meal.label,
+        meal.checked,
+        meal.timestamp,
+        meal.delivered,
+        meal.duration
+      )
     );
   } else {
     addMeal("1st Meal");
   }
 }
 
-function addMeal(label = null, isChecked = false, timestampValue = "") {
+function addMeal(
+  label = null,
+  isChecked = false,
+  timestampValue = "",
+  deliveredValue = "",
+  durationValue = ""
+) {
   const count = document.querySelectorAll(".checkbox-row").length;
   if (count >= MAX_MEALS) return;
 
@@ -57,6 +96,7 @@ function addMeal(label = null, isChecked = false, timestampValue = "") {
   const mealLabel = label || `${count + 1}${ordinalSuffix(count + 1)} Meal`;
   checkbox.dataset.label = mealLabel;
   checkbox.checked = isChecked;
+  checkbox.disabled = !!deliveredValue;
 
   const labelSpan = document.createElement("span");
   labelSpan.className = "checkbox-label";
@@ -76,16 +116,66 @@ function addMeal(label = null, isChecked = false, timestampValue = "") {
     saveState();
   };
 
+  const arrowBtn = document.createElement("button");
+  arrowBtn.className = "arrow-btn";
+  arrowBtn.innerHTML = "&gt;";
+  arrowBtn.style.display = isChecked ? "inline" : "none";
+  arrowBtn.onclick = () => {
+    const latestDelivered = row.dataset.delivered || "Pending";
+    const acceptedRaw = timestamp.textContent.replace("Accepted on: ", "");
+    const acceptedDate = new Date(acceptedRaw);
+
+    let duration = "Pending";
+
+    if (row.dataset.delivered) {
+      const deliveredDate = new Date(row.dataset.delivered);
+      duration = formatDuration(acceptedDate, deliveredDate);
+    } else {
+      duration = formatDuration(acceptedDate, new Date()); // Accepted → NOW
+    }
+
+    document.getElementById("slideUpSheet").classList.remove("hidden");
+    document.getElementById("mealLabelInSheet").textContent = mealLabel;
+    document.getElementById("acceptedTimeInSheet").textContent =
+      timestamp.textContent;
+    document.getElementById("deliveredTimeInSheet").textContent =
+      latestDelivered;
+    document.getElementById("durationInSheet").textContent = duration;
+
+    const markBtn = document.getElementById("markDeliveredBtn");
+    markBtn.disabled = !!row.dataset.delivered;
+
+    activeMealElements = {
+      row,
+      timestamp,
+      arrowBtn,
+      checkbox,
+    };
+  };
+
+  // Set metadata
+  if (deliveredValue) row.dataset.delivered = deliveredValue;
+  if (durationValue) row.dataset.duration = durationValue;
+
+  // Handle checkbox click
   checkbox.addEventListener("click", () => {
-    timestamp.textContent = checkbox.checked
-      ? "Accepted on: " + formatNow()
-      : "";
-    removeBtn.style.display =
-      !checkbox.checked && !timestamp.textContent && count > 0
-        ? "inline"
-        : "none";
+    if (checkbox.checked) {
+      timestamp.textContent = "Accepted on: " + formatNow();
+    } else {
+      timestamp.textContent = "";
+    }
+    updateIcons();
     saveState();
   });
+
+  function updateIcons() {
+    const showRemove = !checkbox.checked && !timestamp.textContent && count > 0;
+    const showArrow = checkbox.checked;
+    removeBtn.style.display = showRemove ? "inline" : "none";
+    arrowBtn.style.display = showArrow ? "inline" : "none";
+  }
+
+  updateIcons();
 
   left.appendChild(checkbox);
   left.appendChild(labelSpan);
@@ -93,6 +183,7 @@ function addMeal(label = null, isChecked = false, timestampValue = "") {
 
   row.appendChild(left);
   row.appendChild(removeBtn);
+  row.appendChild(arrowBtn);
   group.appendChild(row);
   saveState();
 }
@@ -114,6 +205,7 @@ function resetAll() {
   document.getElementById("odoEnd").value = "";
   document.getElementById("summarySection").style.display = "none";
   document.getElementById("checkboxGroup").innerHTML = "";
+  document.getElementById("earningsControls").style.display = "none";
   addMeal("1st Meal");
 }
 
@@ -123,6 +215,8 @@ function computeSummary() {
   const odoStart = parseFloat(document.getElementById("odoStart").value);
   const odoEnd = parseFloat(document.getElementById("odoEnd").value);
   const summary = document.getElementById("summarySection");
+
+  document.getElementById("earningsControls").style.display = "flex";
 
   let onlineText = "Pending";
   if (startText) {
@@ -205,4 +299,142 @@ window.addEventListener("DOMContentLoaded", () => {
   document.getElementById("addMealBtn").onclick = () => addMeal();
   document.getElementById("resetBtn").onclick = resetAll;
   document.getElementById("computeBtn").onclick = computeSummary;
+
+  document.getElementById("closeSheetBtn").onclick = () => {
+    document.getElementById("slideUpSheet").classList.add("hidden");
+  };
+
+  document.getElementById("exportJsonBtn").onclick = () => {
+    const state = JSON.parse(localStorage.getItem("deliveryAppState")) || {};
+
+    const formattedMeals = (state.meals || []).map((meal) => ({
+      label: meal.label,
+      checked: meal.checked,
+      timestamp: formatForExport(meal.timestamp),
+      delivered: formatForExport(meal.delivered),
+      duration: meal.duration || "",
+    }));
+
+    const formattedEarnings = {};
+    if (state.earnings) {
+      formattedEarnings.deliveryPay = parseFloat(
+        state.earnings.deliveryPay || 0
+      ).toFixed(2);
+      formattedEarnings.tips = parseFloat(state.earnings.tips || 0).toFixed(2);
+      formattedEarnings.adjustment = parseFloat(
+        state.earnings.adjustment || 0
+      ).toFixed(2);
+      formattedEarnings.total = parseFloat(state.earnings.total || 0).toFixed(
+        2
+      );
+    }
+
+    const summary = {
+      totalOnline: document
+        .getElementById("summaryOnline")
+        .textContent.replace("• Total Online: ", ""),
+      totalDeliveries: document
+        .getElementById("summaryDeliveries")
+        .textContent.replace("• Total Deliveries: ", ""),
+      totalMileage: document
+        .getElementById("summaryMileage")
+        .textContent.replace("• Total Mileage: ", ""),
+    };
+
+    const exportData = {
+      startTime: formatForExport(state.startTime),
+      endTime: formatForExport(state.endTime),
+      odometerStart: state.odometerStart || "",
+      odometerEnd: state.odometerEnd || "",
+      meals: formattedMeals,
+      earnings: formattedEarnings,
+      summary,
+    };
+
+    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
+      type: "application/json",
+    });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "Export.json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  // Show Earnings Sheet
+  document.getElementById("openEarningsBtn").onclick = () => {
+    const state = JSON.parse(localStorage.getItem("deliveryAppState")) || {};
+    const earnings = state.earnings || {};
+
+    document.getElementById("deliveryPay").value =
+      earnings.deliveryPay !== undefined
+        ? parseFloat(earnings.deliveryPay).toFixed(2)
+        : "";
+
+    document.getElementById("tipsPay").value =
+      earnings.tips !== undefined ? parseFloat(earnings.tips).toFixed(2) : "";
+
+    document.getElementById("adjustmentPay").value =
+      earnings.adjustment !== undefined
+        ? parseFloat(earnings.adjustment).toFixed(2)
+        : "";
+    document.getElementById("totalEarnings").textContent =
+      earnings.total || "Pending";
+
+    document.getElementById("earningsSheet").classList.remove("hidden");
+  };
+
+  document.getElementById("closeEarningsBtn").onclick = () => {
+    document.getElementById("earningsSheet").classList.add("hidden");
+  };
+
+  document.getElementById("calcEarningsBtn").onclick = () => {
+    const deliveryPay =
+      parseFloat(document.getElementById("deliveryPay").value) || 0;
+    const tips = parseFloat(document.getElementById("tipsPay").value) || 0;
+    const adjustment =
+      parseFloat(document.getElementById("adjustmentPay").value) || 0;
+    const total = deliveryPay + tips + adjustment;
+
+    document.getElementById("totalEarnings").textContent = `$${total.toFixed(
+      2
+    )}`;
+
+    const state = JSON.parse(localStorage.getItem("deliveryAppState")) || {};
+    state.earnings = {
+      deliveryPay,
+      tips,
+      adjustment,
+      total: `$${total.toFixed(2)}`,
+    };
+    localStorage.setItem("deliveryAppState", JSON.stringify(state));
+  };
+
+  document.getElementById("markDeliveredBtn").onclick = () => {
+    if (!activeMealElements) return;
+
+    const deliveredNow = new Date();
+    const deliveredStr = deliveredNow.toLocaleString();
+    const acceptedStr = activeMealElements.timestamp.textContent.replace(
+      "Accepted on: ",
+      ""
+    );
+    const acceptedDate = new Date(acceptedStr);
+    const durationStr = formatDuration(acceptedDate, deliveredNow);
+
+    // Update UI
+    document.getElementById("deliveredTimeInSheet").textContent = deliveredStr;
+    document.getElementById("durationInSheet").textContent = durationStr;
+    document.getElementById("markDeliveredBtn").disabled = true;
+
+    // Update dataset
+    activeMealElements.row.dataset.delivered = deliveredStr;
+    activeMealElements.row.dataset.duration = durationStr;
+
+    // Lock checkbox
+    activeMealElements.checkbox.disabled = true;
+
+    saveState();
+  };
 });
