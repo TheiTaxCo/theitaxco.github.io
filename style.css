@@ -4,11 +4,10 @@ body {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 30px;
+  padding: 10px;
 }
 
 h1 {
-  margin-top: 5px;
   color: #2c3e50;
   text-align: center;
 }
@@ -17,6 +16,7 @@ h2 {
   margin-top: 15px;
   margin-bottom: 0;
   color: #2c3e50;
+  text-align: left;
 }
 
 table {
@@ -54,30 +54,36 @@ input[type="number"] {
 }
 
 .checkbox-group {
-  max-width: 600px;
+  max-width: 700px;
   width: 100%;
-  margin-top: 10px;
+  margin-top: 20px;
 }
 
 .checkbox-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
+
   background-color: white;
-  padding: 12px 16px;
+  padding: 16px 20px;
   /*border: 1px solid #ccc;*/
-  border-radius: 12px;
+  border-radius: 14px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
   margin-bottom: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+
   transition: box-shadow 0.2s ease;
   position: relative;
-  /*flex-wrap: wrap; /* ✅ allows button to stay within layout if overflow happens */
+  /*flex-wrap: wrap; /* allows button to stay within layout if overflow happens */
 }
 
 .checkbox-left {
   display: flex;
   align-items: center;
   gap: 10px;
+  width: 20px;
+  height: 20px;
 }
 
 .checkbox-label {
@@ -111,6 +117,27 @@ input[type="number"] {
   color: white;
 }
 
+.arrow-btn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  height: 100%;
+  padding: 0 10px;
+  background: none;
+  border: none;
+  font-size: 18px;
+  color: #888;
+  cursor: pointer;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+
+.arrow-btn:hover {
+  background-color: #00b06b;
+  color: white;
+}
+
 #summarySection {
   display: none;
   max-width: 600px;
@@ -129,28 +156,26 @@ button {
 }
 
 .btn-primary {
-  background-color: #00b06b;
+  background-color: #2ecc71;
   color: white;
   border: none;
-  font-size: 16px;
 }
 
 .btn-primary:hover,
 .btn-primary:active {
-  background-color: #2ecc71;
+  background-color: #27ae60;
 }
 
 .btn-secondary {
   background-color: transparent;
-  border: 2px solid #00b06b;
-  color: #00b06b;
-  font-size: 16px;
+  border: 2px solid #2ecc71;
+  color: #2ecc71;
 }
 
 .btn-secondary:hover,
 .btn-secondary:active {
-  background-color: #2ecc71;
-  border-color: #2ecc71;
+  background-color: #27ae60;
+  border-color: #27ae60;
   color: white;
 }
 
@@ -158,7 +183,6 @@ button {
   background-color: black;
   color: white;
   border: none;
-  font-size: 16px;
 }
 
 .btn-tertiary:hover,
@@ -170,7 +194,6 @@ button {
   background-color: #0d6efd;
   color: white;
   border: none;
-  font-size: 16px;
 }
 
 .btn-quaternary:hover,
@@ -182,8 +205,8 @@ button {
 #customToast {
   visibility: hidden;
   min-width: 250px;
-  background-color: #28a745;
-  color: white;
+  background-color: black;
+  color: #28a745;
   text-align: center;
   border-radius: 6px;
   padding: 12px;
@@ -199,6 +222,60 @@ button {
 #customToast.show-toast {
   visibility: visible;
   animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+.slide-up {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  max-width: 600px;
+  width: 90%;
+  height: 40%;
+  background: white;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  z-index: 1000;
+  transition: transform 0.3s ease;
+  transform: translateY(0%);
+}
+.slide-up.hidden {
+  transform: translateY(100%);
+}
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#closeSheetBtn {
+  font-size: 24px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  color: #999;
+}
+#closeSheetBtn:hover {
+  color: black;
+}
+
+#earningsControls {
+  display: none;
+  justify-content: flex-start;
+  margin-top: 10px;
+}
+
+#earningsControls button {
+  margin-right: 10px;
+}
+
+#earningsSheet input[type="number"] {
+  width: 150px;
+  margin-left: 10px;
+}
+
+#earningsSheet p {
+  margin: 10px 0;
 }
 
 @keyframes fadein {
@@ -222,3 +299,4 @@ button {
     opacity: 0;
   }
 }
+
