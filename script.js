@@ -126,7 +126,6 @@ function addMeal(
     const acceptedDate = new Date(acceptedRaw);
 
     let duration = "Pending";
-
     if (row.dataset.delivered) {
       const deliveredDate = new Date(row.dataset.delivered);
       duration = formatDuration(acceptedDate, deliveredDate);
@@ -145,25 +144,16 @@ function addMeal(
     const markBtn = document.getElementById("markDeliveredBtn");
     markBtn.disabled = !!row.dataset.delivered;
 
-    activeMealElements = {
-      row,
-      timestamp,
-      arrowBtn,
-      checkbox,
-    };
+    activeMealElements = { row, timestamp, arrowBtn, checkbox };
   };
 
-  // Set metadata
   if (deliveredValue) row.dataset.delivered = deliveredValue;
   if (durationValue) row.dataset.duration = durationValue;
 
-  // Handle checkbox click
   checkbox.addEventListener("click", () => {
-    if (checkbox.checked) {
-      timestamp.textContent = "Accepted on: " + formatNow();
-    } else {
-      timestamp.textContent = "";
-    }
+    timestamp.textContent = checkbox.checked
+      ? "Accepted on: " + formatNow()
+      : "";
     updateIcons();
     saveState();
   });
@@ -174,7 +164,6 @@ function addMeal(
     removeBtn.style.display = showRemove ? "inline" : "none";
     arrowBtn.style.display = showArrow ? "inline" : "none";
   }
-
   updateIcons();
 
   left.appendChild(checkbox);
@@ -304,6 +293,7 @@ window.addEventListener("DOMContentLoaded", () => {
     document.getElementById("slideUpSheet").classList.add("hidden");
   };
 
+  // EXPORT JSON (Fix #1: define `state`)
   document.getElementById("exportJsonBtn").onclick = () => {
     const state = JSON.parse(localStorage.getItem("deliveryAppState")) || {};
 
@@ -362,79 +352,119 @@ window.addEventListener("DOMContentLoaded", () => {
     URL.revokeObjectURL(url);
   };
 
-  // Show Earnings Sheet
+  // Show Earnings Sheet (prefill from earningsSummary)
   document.getElementById("openEarningsBtn").onclick = () => {
-    const state = JSON.parse(localStorage.getItem("deliveryAppState")) || {};
-    const earnings = state.earnings || {};
+    try {
+      const saved = JSON.parse(localStorage.getItem("earningsSummary")) || {};
+      const gh = saved.grubhub || {};
+      const ue = saved.uberEats || {};
 
-    document.getElementById("deliveryPay").value =
-      earnings.deliveryPay !== undefined
-        ? parseFloat(earnings.deliveryPay).toFixed(2)
-        : "";
+      const setVal = (id, val) => {
+        const el = document.getElementById(id);
+        if (el)
+          el.value = val != null && val !== "" ? Number(val).toFixed(2) : "";
+      };
+      setVal("deliveryPayGrubhub", gh.deliveryPay);
+      setVal("tipsPayGrubhub", gh.tips);
+      setVal("adjustmentPayGrubhub", gh.adjustmentPay);
+      setVal("deliveryPayUber", ue.deliveryPay);
+      setVal("tipsPayUber", ue.tips);
+      setVal("adjustmentPayUber", ue.adjustmentPay);
 
-    document.getElementById("tipsPay").value =
-      earnings.tips !== undefined ? parseFloat(earnings.tips).toFixed(2) : "";
-
-    document.getElementById("adjustmentPay").value =
-      earnings.adjustment !== undefined
-        ? parseFloat(earnings.adjustment).toFixed(2)
-        : "";
-    document.getElementById("totalEarnings").textContent =
-      earnings.total || "Pending";
+      const setText = (id, val) => {
+        const el = document.getElementById(id);
+        if (el)
+          el.textContent =
+            val != null && val !== "" ? Number(val).toFixed(2) : "Pending";
+      };
+      setText("totalEarningsGrubhub", gh.total);
+      setText("totalEarningsUber", ue.total);
+      setText("grandTotalEarnings", saved.grandTotal);
+    } catch (_) {
+      // ignore prefill errors
+    }
 
     document.getElementById("earningsSheet").classList.remove("hidden");
   };
 
-  document.getElementById("closeEarningsBtn").onclick = () => {
+  // Calculate + save earningsSummary
+  document
+    .getElementById("calcEarningsBtn")
+    .addEventListener("click", function () {
+      const ghDelivery =
+        parseFloat(document.getElementById("deliveryPayGrubhub").value) || 0;
+      const ghTips =
+        parseFloat(document.getElementById("tipsPayGrubhub").value) || 0;
+      const ghAdjust =
+        parseFloat(document.getElementById("adjustmentPayGrubhub").value) || 0;
+
+      const ueDelivery =
+        parseFloat(document.getElementById("deliveryPayUber").value) || 0;
+      const ueTips =
+        parseFloat(document.getElementById("tipsPayUber").value) || 0;
+      const ueAdjust =
+        parseFloat(document.getElementById("adjustmentPayUber").value) || 0;
+
+      const totalGrubhub = ghDelivery + ghTips + ghAdjust;
+      const totalUber = ueDelivery + ueTips + ueAdjust;
+      const grandTotal = totalGrubhub + totalUber;
+
+      document.getElementById("totalEarningsGrubhub").textContent =
+        totalGrubhub.toFixed(2);
+      document.getElementById("totalEarningsUber").textContent =
+        totalUber.toFixed(2);
+      document.getElementById("grandTotalEarnings").textContent =
+        grandTotal.toFixed(2);
+
+      const earningsData = {
+        grubhub: {
+          deliveryPay: ghDelivery.toFixed(2),
+          tips: ghTips.toFixed(2),
+          adjustmentPay: ghAdjust.toFixed(2),
+          total: totalGrubhub.toFixed(2),
+        },
+        uberEats: {
+          deliveryPay: ueDelivery.toFixed(2),
+          tips: ueTips.toFixed(2),
+          adjustmentPay: ueAdjust.toFixed(2),
+          total: totalUber.toFixed(2),
+        },
+        grandTotal: grandTotal.toFixed(2),
+      };
+
+      localStorage.setItem("earningsSummary", JSON.stringify(earningsData));
+    });
+}); // <-- Fix #2: close DOMContentLoaded wrapper
+
+// Save the state before the page is unloaded
+window.addEventListener("beforeunload", saveState);
+
+// Hide earnings sheet when "×" close button is clicked
+document
+  .getElementById("closeEarningsBtn")
+  .addEventListener("click", function () {
     document.getElementById("earningsSheet").classList.add("hidden");
-  };
+  });
 
-  document.getElementById("calcEarningsBtn").onclick = () => {
-    const deliveryPay =
-      parseFloat(document.getElementById("deliveryPay").value) || 0;
-    const tips = parseFloat(document.getElementById("tipsPay").value) || 0;
-    const adjustment =
-      parseFloat(document.getElementById("adjustmentPay").value) || 0;
-    const total = deliveryPay + tips + adjustment;
+document.getElementById("markDeliveredBtn").onclick = () => {
+  if (!activeMealElements) return;
 
-    document.getElementById("totalEarnings").textContent = `$${total.toFixed(
-      2
-    )}`;
+  const deliveredNow = new Date();
+  const deliveredStr = deliveredNow.toLocaleString();
+  const acceptedStr = activeMealElements.timestamp.textContent.replace(
+    "Accepted on: ",
+    ""
+  );
+  const acceptedDate = new Date(acceptedStr);
+  const durationStr = formatDuration(acceptedDate, deliveredNow);
 
-    const state = JSON.parse(localStorage.getItem("deliveryAppState")) || {};
-    state.earnings = {
-      deliveryPay,
-      tips,
-      adjustment,
-      total: `$${total.toFixed(2)}`,
-    };
-    localStorage.setItem("deliveryAppState", JSON.stringify(state));
-  };
+  document.getElementById("deliveredTimeInSheet").textContent = deliveredStr;
+  document.getElementById("durationInSheet").textContent = durationStr;
+  document.getElementById("markDeliveredBtn").disabled = true;
 
-  document.getElementById("markDeliveredBtn").onclick = () => {
-    if (!activeMealElements) return;
+  activeMealElements.row.dataset.delivered = deliveredStr;
+  activeMealElements.row.dataset.duration = durationStr;
+  activeMealElements.checkbox.disabled = true;
 
-    const deliveredNow = new Date();
-    const deliveredStr = deliveredNow.toLocaleString();
-    const acceptedStr = activeMealElements.timestamp.textContent.replace(
-      "Accepted on: ",
-      ""
-    );
-    const acceptedDate = new Date(acceptedStr);
-    const durationStr = formatDuration(acceptedDate, deliveredNow);
-
-    // Update UI
-    document.getElementById("deliveredTimeInSheet").textContent = deliveredStr;
-    document.getElementById("durationInSheet").textContent = durationStr;
-    document.getElementById("markDeliveredBtn").disabled = true;
-
-    // Update dataset
-    activeMealElements.row.dataset.delivered = deliveredStr;
-    activeMealElements.row.dataset.duration = durationStr;
-
-    // Lock checkbox
-    activeMealElements.checkbox.disabled = true;
-
-    saveState();
-  };
-});
+  saveState();
+};
