@@ -295,8 +295,10 @@ window.addEventListener("DOMContentLoaded", () => {
 
   // EXPORT JSON (Fix #1: define `state`)
   document.getElementById("exportJsonBtn").onclick = () => {
+    // Read the main app state (meals, times, odo, etc.)
     const state = JSON.parse(localStorage.getItem("deliveryAppState")) || {};
 
+    // ---- Meals formatting ----
     const formattedMeals = (state.meals || []).map((meal) => ({
       label: meal.label,
       checked: meal.checked,
@@ -305,20 +307,31 @@ window.addEventListener("DOMContentLoaded", () => {
       duration: meal.duration || "",
     }));
 
-    const formattedEarnings = {};
+    // ---- Earnings (legacy fallback) ----
+    // Some older versions stored a single total in state.earnings; keep a fallback just in case.
+    const formattedEarningsLegacy = {};
     if (state.earnings) {
-      formattedEarnings.deliveryPay = parseFloat(
+      formattedEarningsLegacy.deliveryPay = parseFloat(
         state.earnings.deliveryPay || 0
       ).toFixed(2);
-      formattedEarnings.tips = parseFloat(state.earnings.tips || 0).toFixed(2);
-      formattedEarnings.adjustment = parseFloat(
+      formattedEarningsLegacy.tips = parseFloat(
+        state.earnings.tips || 0
+      ).toFixed(2);
+      formattedEarningsLegacy.adjustment = parseFloat(
         state.earnings.adjustment || 0
       ).toFixed(2);
-      formattedEarnings.total = parseFloat(state.earnings.total || 0).toFixed(
-        2
-      );
+      formattedEarningsLegacy.total = parseFloat(
+        (state.earnings.total || "").toString().replace(/^\$/, "") || 0
+      ).toFixed(2);
     }
 
+    // ---- NEW earnings source ----
+    // This is where the latest Grubhub/Uber/Grand Total is stored by the Calculate button.
+    const earningsSummary = JSON.parse(
+      localStorage.getItem("earningsSummary") || "{}"
+    );
+
+    // ---- Summary text from UI ----
     const summary = {
       totalOnline: document
         .getElementById("summaryOnline")
@@ -331,16 +344,21 @@ window.addEventListener("DOMContentLoaded", () => {
         .textContent.replace("• Total Mileage: ", ""),
     };
 
+    // ---- Build export payload ----
     const exportData = {
       startTime: formatForExport(state.startTime),
       endTime: formatForExport(state.endTime),
       odometerStart: state.odometerStart || "",
       odometerEnd: state.odometerEnd || "",
       meals: formattedMeals,
-      earnings: formattedEarnings,
+      // Prefer the new multi‑courier structure; fall back to legacy if it doesn't exist yet.
+      earnings: Object.keys(earningsSummary).length
+        ? earningsSummary
+        : formattedEarningsLegacy,
       summary,
     };
 
+    // ---- Download ----
     const blob = new Blob([JSON.stringify(exportData, null, 2)], {
       type: "application/json",
     });
