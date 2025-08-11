@@ -47,7 +47,106 @@
       <p id="summaryMileage">• Total Mileage: ...</p>
     </div>
 
+    <!-- Place this after #summaryMileage in #summarySection -->
+    <div id="earningsControls">
+      <button id="openEarningsBtn" class="btn-primary">Earnings</button>
+      <button id="exportJsonBtn" class="btn-primary">Export</button>
+    </div>
+
+    <!-- Slide-up sheet for Earnings -->
+    <div id="earningsSheet" class="slide-up scrollable hidden">
+      <div class="sheet-header">
+        <h2>Earnings Summary</h2>
+        <button id="closeEarningsBtn">&times;</button>
+      </div>
+
+      <h3>Grubhub</h3>
+      <div class="form-row">
+        <label for="deliveryPayGrubhub">Delivery Pay</label>
+        <input
+          type="number"
+          id="deliveryPayGrubhub"
+          step="0.01"
+          placeholder="0.00"
+        />
+      </div>
+      <div class="form-row">
+        <label for="tipsPayGrubhub">Tips</label>
+        <input
+          type="number"
+          id="tipsPayGrubhub"
+          step="0.01"
+          placeholder="0.00"
+        />
+      </div>
+      <div class="form-row">
+        <label for="adjustmentPayGrubhub">Adjustment Pay</label>
+        <input
+          type="number"
+          id="adjustmentPayGrubhub"
+          step="0.01"
+          placeholder="0.00"
+        />
+      </div>
+      <div class="form-row">
+        <label>Total Earnings</label>
+        <span id="totalEarningsGrubhub" class="output-value">Pending</span>
+      </div>
+
+      <hr />
+
+      <h3>Uber Eats</h3>
+      <div class="form-row">
+        <label for="deliveryPayUber">Delivery Pay</label>
+        <input
+          type="number"
+          id="deliveryPayUber"
+          step="0.01"
+          placeholder="0.00"
+        />
+      </div>
+      <div class="form-row">
+        <label for="tipsPayUber">Tips</label>
+        <input type="number" id="tipsPayUber" step="0.01" placeholder="0.00" />
+      </div>
+      <div class="form-row">
+        <label for="adjustmentPayUber">Adjustment Pay</label>
+        <input
+          type="number"
+          id="adjustmentPayUber"
+          step="0.01"
+          placeholder="0.00"
+        />
+      </div>
+      <div class="form-row">
+        <label>Total Earnings</label>
+        <span id="totalEarningsUber" class="output-value">Pending</span>
+      </div>
+
+      <hr />
+
+      <div class="form-row">
+        <label><strong>Grand Total</strong></label>
+        <span id="grandTotalEarnings" class="output-value">Pending</span>
+      </div>
+
+      <div class="form-actions">
+        <button id="calcEarningsBtn" class="btn-primary">Calculate</button>
+      </div>
+    </div>
+
     <div id="customToast"></div>
+
+    <div id="slideUpSheet" class="slide-up hidden">
+      <div class="sheet-header">
+        <span id="mealLabelInSheet"></span>
+        <button id="closeSheetBtn">&times;</button>
+      </div>
+      <p><strong>Accepted:</strong> <span id="acceptedTimeInSheet"></span></p>
+      <p><strong>Delivered:</strong> <span id="deliveredTimeInSheet"></span></p>
+      <p><strong>Duration:</strong> <span id="durationInSheet"></span></p>
+      <button class="btn-quaternary" id="markDeliveredBtn">Delivered</button>
+    </div>
 
     <script src="script.js"></script>
   </body>
