@@ -254,15 +254,45 @@ button {
   align-items: center;
 }
 #closeSheetBtn {
-  font-size: 24px;
-  background: #cc0000;
+  display: flex; /* enable flexbox */
+  align-items: center; /* vertical center */
+  justify-content: center; /* horizontal center */
+  font-size: 24px; /* size of the × */
+  background: #cc0000; /* red background */
   border: none;
   cursor: pointer;
   color: white;
+  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  line-height: 1;
+  padding: 0;
 }
 #closeSheetBtn:hover {
-  color: white;
   background: #ff8080;
+  color: white;
+}
+
+/* Style the Earnings sheet close button (matches the other sheet) */
+#closeEarningsBtn {
+  display: flex; /* enable flexbox */
+  align-items: center; /* vertical center */
+  justify-content: center; /* horizontal center */
+  font-size: 24px; /* size of the × */
+  background: #cc0000; /* red background */
+  border: none;
+  cursor: pointer;
+  color: white;
+  border-radius: 8px;
+  width: 42px;
+  height: 42px;
+  line-height: 1;
+  padding: 0;
+}
+
+#closeEarningsBtn:hover {
+  background: #ff8080;
+  color: white;
 }
 
 #earningsControls {
@@ -276,12 +306,31 @@ button {
 }
 
 #earningsSheet input[type="number"] {
-  width: 150px;
+  width: 75px;
   margin-left: 10px;
 }
 
 #earningsSheet p {
   margin: 10px 0;
+}
+
+/* Make each earnings row a flex row with the input on the right */
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* Labels take remaining space so the input hugs the right side */
+.form-row label {
+  flex: 1 1 auto;
+}
+
+/* Earnings inputs: right-aligned, half the old width */
+#earningsSheet input[type="number"] {
+  width: 75px; /* was 150px */
+  margin-left: 10px;
+  text-align: right; /* right-align numbers in the box */
 }
 
 @keyframes fadein {
