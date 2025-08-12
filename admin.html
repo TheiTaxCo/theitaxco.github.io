@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Admin — Edit Timestamps</title>
+    <link rel="stylesheet" href="style.css" />
+    <style>
+      .admin-wrap {
+        max-width: 720px;
+        margin: 0 auto;
+      }
+      .topbar {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin: 10px 0 16px;
+      }
+      .muted {
+        color: #666;
+        font-size: 0.9rem;
+      }
+      .pill {
+        font-size: 12px;
+        padding: 2px 8px;
+        border-radius: 999px;
+        background: #ecf0f1;
+      }
+      table td input[type="datetime-local"] {
+        width: 100%;
+        box-sizing: border-box;
+      }
+      tfoot td {
+        background: #fafafa;
+      }
+      .error {
+        color: #c00;
+        font-size: 0.9rem;
+        margin-top: 8px;
+        display: none;
+      }
+      .success {
+        color: #0a7d31;
+        font-size: 0.95rem;
+        margin-top: 8px;
+        display: none;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        justify-content: flex-end;
+        margin-top: 12px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="admin-wrap">
+      <div class="topbar">
+        <h1>Admin — Edit Timestamps</h1>
+        <a class="btn-secondary" href="index.html">← Back to Main</a>
+      </div>
+      <p class="muted">
+        Edit <span class="pill">Accepted</span> and
+        <span class="pill">Delivered</span> timestamps for any meal that already
+        has time data. Use Bulk Save to apply updates.
+      </p>
+
+      <h2>Deliveries</h2>
+      <table id="adminTable">
+        <thead>
+          <tr>
+            <th style="width: 34%">Meal</th>
+            <th style="width: 33%">Accepted</th>
+            <th style="width: 33%">Delivered</th>
+          </tr>
+        </thead>
+        <tbody>
+          <!-- Rows injected by admin.js -->
+        </tbody>
+        <tfoot>
+          <tr>
+            <td colspan="3">
+              <div class="actions">
+                <button id="bulkSaveBtn" class="btn-primary">Save All</button>
+                <button id="reloadBtn" class="btn-secondary">Reload</button>
+              </div>
+              <div id="errorBox" class="error"></div>
+              <div id="successBox" class="success"></div>
+            </td>
+          </tr>
+        </tfoot>
+      </table>
+    </div>
+
+    <script src="admin.js"></script>
+  </body>
+</html>
