@@ -71,6 +71,7 @@
           type="number"
           id="deliveryPayGrubhub"
           step="0.01"
+          inputmode="decimal"
           placeholder="0.00"
         />
       </div>
@@ -80,6 +81,7 @@
           type="number"
           id="tipsPayGrubhub"
           step="0.01"
+          inputmode="decimal"
           placeholder="0.00"
         />
       </div>
@@ -89,6 +91,7 @@
           type="number"
           id="adjustmentPayGrubhub"
           step="0.01"
+          inputmode="decimal"
           placeholder="0.00"
         />
       </div>
@@ -106,12 +109,19 @@
           type="number"
           id="deliveryPayUber"
           step="0.01"
+          inputmode="decimal"
           placeholder="0.00"
         />
       </div>
       <div class="form-row">
         <label for="tipsPayUber">Tips</label>
-        <input type="number" id="tipsPayUber" step="0.01" placeholder="0.00" />
+        <input
+          type="number"
+          id="tipsPayUber"
+          step="0.01"
+          inputmode="decimal"
+          placeholder="0.00"
+        />
       </div>
       <div class="form-row">
         <label for="adjustmentPayUber">Adjustment Pay</label>
@@ -119,6 +129,7 @@
           type="number"
           id="adjustmentPayUber"
           step="0.01"
+          inputmode="decimal"
           placeholder="0.00"
         />
       </div>
@@ -135,7 +146,7 @@
       </div>
 
       <div class="form-actions">
-        <button id="calcEarningsBtn" class="btn-primary">Calculate</button>
+        <button id="calcEarningsBtn" class="btn-calculate">Calculate</button>
       </div>
     </div>
 

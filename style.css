@@ -204,6 +204,16 @@ button {
   background-color: #0b5ed7;
 }
 
+.btn-calculate {
+  background-color: black;
+  color: white;
+  border: none;
+  width: 144px;
+  height: 48px;
+  font-size: 16px;
+  margin-top: 15px;
+}
+
 /* Toast */
 #customToast {
   visibility: hidden;
@@ -253,6 +263,34 @@ button {
   justify-content: space-between;
   align-items: center;
 }
+/* Pull the whole sheet content up slightly */
+#earningsSheet.slide-up {
+  padding-top: 12px; /* was 20px */
+}
+
+/* Make the header sit tight to the top */
+#earningsSheet .sheet-header {
+  margin-top: 0;
+  margin-bottom: 8px; /* subtle spacing under the header */
+}
+
+/* Ensure the H2 itself has no extra top margin */
+#earningsSheet .sheet-header h2 {
+  margin: 0;
+}
+
+/* Add top spacing above each section's Total row */
+#earningsSheet .form-row:has(#totalEarningsGrubhub),
+#earningsSheet .form-row:has(#totalEarningsUber) {
+  margin-top: 14px; /* adjust to taste */
+  font-weight: 600; /* optional: emphasize total line */
+}
+
+#earningsSheet hr {
+  margin-top: 14px; /* space under totals */
+  margin-bottom: 14px;
+}
+
 #closeSheetBtn {
   display: flex; /* enable flexbox */
   align-items: center; /* vertical center */
