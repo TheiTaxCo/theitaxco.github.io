@@ -215,11 +215,6 @@ button {
   margin-top: 15px;
 }
 
-.btn-calculate:hover,
-.btn-calculate:active {
-  background-color: grey;
-}
-
 /* Toast */
 #customToast {
   visibility: hidden;
