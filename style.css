@@ -204,14 +204,20 @@ button {
   background-color: #0b5ed7;
 }
 
+/* Calculation Button for Earnings Summary*/
 .btn-calculate {
   background-color: black;
   color: white;
   border: none;
-  width: 144px;
+  width: 244px;
   height: 48px;
   font-size: 16px;
   margin-top: 15px;
+}
+
+.btn-calculate:hover,
+.btn-calculate:active {
+  background-color: grey;
 }
 
 /* Toast */
