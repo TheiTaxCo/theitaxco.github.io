@@ -209,10 +209,10 @@ button {
   background-color: black;
   color: white;
   border: none;
-  width: 244px;
+  width: 385px;
   height: 48px;
   font-size: 16px;
-  margin-top: 15px;
+  margin-top: 20px;
 }
 
 /* Toast */
@@ -282,7 +282,8 @@ button {
 
 /* Add top spacing above each section's Total row */
 #earningsSheet .form-row:has(#totalEarningsGrubhub),
-#earningsSheet .form-row:has(#totalEarningsUber) {
+#earningsSheet .form-row:has(#totalEarningsUber),
+#earningsSheet .form-row:has(#grandTotalEarnings) {
   margin-top: 14px; /* adjust to taste */
   font-weight: 600; /* optional: emphasize total line */
 }
