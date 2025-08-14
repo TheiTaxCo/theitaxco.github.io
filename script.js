@@ -392,7 +392,7 @@ function exportToJson() {
     type: "application/json",
   });
 
-  const filename = "export.json";
+  const filename = "Export.json";
 
   const a = document.createElement("a");
   a.href = URL.createObjectURL(blob);
