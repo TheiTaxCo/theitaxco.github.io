@@ -119,8 +119,8 @@ function ensureCopyButton() {
 
     const btn = document.createElement("button");
     btn.id = "copyMessageBtn";
-    btn.className = "btn-quaternary";
-    btn.textContent = "Copy Message";
+    btn.className = "btn-copyMessage";
+    btn.innerHTML = `<i data-lucide="copy"></i>`;
     btn.onclick = () => {
       // Prefer legacy function if present (your original behavior)
       if (typeof window.copyText1 === "function") {

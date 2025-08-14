@@ -279,6 +279,23 @@ button {
   margin-top: 20px;
 }
 
+/* Copy Button for Deliveries */
+.btn-copyMessage {
+  background-color: lightgreen;
+  border: none;
+  width: 48px;
+  height: 48px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 8px;
+}
+
+.btn-copyMessage.icon-only i {
+  width: 20px;
+  height: 20px;
+}
+
 /* ========== Toast ========== */
 #customToast {
   visibility: hidden;
@@ -347,6 +364,33 @@ button {
 }
 #earningsSheet hr {
   margin: 14px 0;
+}
+
+/* Earnings rows: label left, value right */
+#earningsTotals .earnings-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin: 10px 0;
+}
+
+/* Right column (number) */
+#earningsTotals .amount {
+  margin-left: 16px; /* gap from label */
+  min-width: 84px; /* keeps column aligned */
+  text-align: right;
+  font-variant-numeric: tabular-nums; /* nicer alignment */
+}
+
+/* Prepend $ to all amounts via CSS */
+#earningsTotals .amount::before {
+  content: "$";
+  margin-right: 4px;
+}
+
+/* Slight emphasis for grand total */
+#earningsTotals .amount.grand {
+  font-weight: 600;
 }
 
 #closeSheetBtn,
