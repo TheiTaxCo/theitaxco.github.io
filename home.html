@@ -25,14 +25,19 @@
 
     <!-- Scrollable Content -->
     <main class="content">
-      <!-- Summary -->
-      <section class="card" id="summarySection">
-        <h3>Summary</h3>
-        <div class="pill blue" id="deliveriesPill">
-          Total Deliveries: 0 Deliveries
+      <!-- Time Clock -->
+      <section class="card">
+        <h3>Time Clock</h3>
+        <div class="pill gray" id="durationPill">Duration: Pending</div>
+
+        <div class="row" style="margin-top: 18px">
+          <div><strong>Start Time</strong></div>
+          <div id="startTime"></div>
         </div>
-        <div class="pill green" id="earningsPill" style="margin-top: 10px">
-          Total Earnings: $0.00
+
+        <div class="row" style="margin-top: 18px">
+          <div><strong>End Time</strong></div>
+          <div id="endTime"></div>
         </div>
       </section>
 
@@ -66,19 +71,14 @@
         </div>
       </section>
 
-      <!-- Time Clock -->
-      <section class="card">
-        <h3>Time Clock</h3>
-        <div class="pill gray" id="durationPill">Duration: Pending</div>
-
-        <div class="row" style="margin-top: 12px">
-          <div><strong>Start Time</strong></div>
-          <div id="startTime"></div>
+      <!-- Summary -->
+      <section class="card" id="summarySection">
+        <h3>Summary</h3>
+        <div class="pill blue" id="deliveriesPill">
+          Total Deliveries: 0 Deliveries
         </div>
-
-        <div class="row">
-          <div><strong>End Time</strong></div>
-          <div id="endTime"></div>
+        <div class="pill green" id="earningsPill" style="margin-top: 10px">
+          Total Earnings: $0.00
         </div>
       </section>
     </main>
