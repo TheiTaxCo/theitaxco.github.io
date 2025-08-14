@@ -1,123 +1,424 @@
+/* ========== Base Layout & Typography ========== */
+:root {
+  --header-bg: #e5e7eb; /* medium gray */
+  --nav-active: #000000; /* black */
+  --nav-inactive: #9ca3af; /* gray-400 */
+  --surface: #ffffff;
+  --border: #d1d5db;
+  --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
+
+  /* layout vars */
+  --header-h: 56px;
+  --nav-h: 64px;
+  --action-h: 56px; /* Start/End bar on Home only */
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
 body {
-  font-family: Arial, sans-serif;
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial,
+    sans-serif;
   background-color: #f9fafb;
+  color: #111827;
   display: flex;
   flex-direction: column;
-  align-items: left;
-  padding: 10px;
-  margin-bottom: 20px;
 }
 
-h1 {
-  color: #2c3e50;
+/* Prevent iOS zoom on input focus (use >=16px font) */
+input,
+select,
+textarea,
+button {
+  font-size: 16px;
+}
+
+/* ========== Fixed Header ========== */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  background: var(--header-bg);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 1002;
+  border-bottom: 1px solid var(--border);
+}
+
+.app-header .hamburger {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  align-items: center;
+  justify-content: center;
+  margin-right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+}
+
+.app-header .title {
+  font-weight: 800;
+  font-size: 22px;
+}
+
+/* make header icons visible */
+.app-header svg {
+  width: 22px;
+  height: 22px;
+  stroke: #111827;
+}
+
+/* ========== Content Area (scrolls) ========== */
+.content {
+  position: relative;
+  flex: 1 1 auto;
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 16px;
+  padding-top: calc(var(--header-h) + 8px); /* header + small gap */
+  /* default assumes a page MAY show the action bar */
+  padding-bottom: calc(
+    var(--nav-h) + var(--action-h) + env(safe-area-inset-bottom, 0px)
+  );
+}
+
+/* Pages without the action bar (Deliveries, Earnings, Admin…) */
+.content.no-actionbar {
+  padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
+}
+
+/* Cards/sections used on Home page */
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  box-shadow: var(--shadow);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.card h3 {
+  margin: 0 0 12px 0;
+}
+
+/* Inputs inside cards (mobile friendly) */
+.card input[type="text"],
+.card input[type="number"] {
+  width: 100%;
+  padding: 10px 12px;
+  border-radius: 10px;
+  border: 1px solid #cbd5e1;
+  background: #fff;
+}
+
+/* Two-column label/value row */
+.row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  margin: 10px 0;
+}
+
+/* Pills (summary, mileage, duration) */
+.pill {
+  display: block;
+  width: 100%;
+  padding: 12px 16px;
+  border-radius: 12px;
+  color: #fff;
+  font-weight: 700;
   text-align: center;
 }
-
-h2 {
-  margin-top: 15px;
-  margin-bottom: 0;
-  color: #2c3e50;
-  text-align: left;
+.pill.blue {
+  background: #2f6edb;
+}
+.pill.green {
+  background: #16a34a;
+}
+.pill.orange {
+  background: #f59e0b;
+}
+.pill.gray {
+  background: #6b7280;
 }
 
+/* ========== Fixed Start/End Action Bar (Home only) ========== */
+.action-bar {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: calc(
+    var(--nav-h) + env(safe-area-inset-bottom, 0px)
+  ); /* sit above bottom nav */
+  height: var(--action-h);
+  display: flex;
+  gap: 12px;
+  justify-content: center;
+  align-items: center;
+  padding: 10px 12px;
+  background: #fff;
+  border-top: 1px solid var(--border);
+  z-index: 1003;
+}
+
+/* ========== Fixed Bottom Navigation ========== */
+.bottom-nav {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: var(--nav-h);
+  background: #fff;
+  border-top: 1px solid var(--border);
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  z-index: 1002;
+}
+
+.bottom-nav .nav-inner {
+  max-width: 720px;
+  height: 100%;
+  margin: 0 auto;
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+}
+
+.nav-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  text-decoration: none;
+  color: var(--nav-inactive);
+  font-size: 12px;
+}
+
+.nav-item svg {
+  width: 22px;
+  height: 22px;
+  stroke: var(--nav-inactive);
+}
+
+.nav-item.active {
+  color: var(--nav-active);
+}
+.nav-item.active svg {
+  stroke: var(--nav-active);
+}
+
+/* ========== Buttons (existing styles) ========== */
+button {
+  padding: 10px 20px;
+  border-radius: 8px;
+  cursor: pointer;
+  border: none;
+}
+
+.btn-primary {
+  background-color: #2ecc71;
+  color: white;
+}
+.btn-primary:hover,
+.btn-primary:active {
+  background-color: #27ae60;
+}
+
+.btn-secondary {
+  background-color: transparent;
+  border: 2px solid #2ecc71;
+  color: #2ecc71;
+}
+.btn-secondary:hover,
+.btn-secondary:active {
+  background-color: #27ae60;
+  border-color: #27ae60;
+  color: white;
+}
+
+.btn-tertiary {
+  background-color: black;
+  color: white;
+}
+.btn-tertiary:hover,
+.btn-tertiary:active {
+  background-color: #333;
+}
+
+.btn-quaternary {
+  background-color: #0d6efd;
+  color: white;
+  width: 144px;
+  height: 48px;
+}
+.btn-quaternary:hover,
+.btn-quaternary:active {
+  background-color: #0b5ed7;
+}
+
+/* ========== Toast ========== */
+#customToast {
+  visibility: hidden;
+  min-width: 250px;
+  background-color: black;
+  color: #28a745;
+  text-align: center;
+  border-radius: 6px;
+  padding: 12px;
+  position: fixed;
+  z-index: 1100;
+  left: 50%;
+  bottom: 40px;
+  transform: translateX(-50%);
+  font-size: 16px;
+  box-shadow: 0 0 10px rgba(0, 0, 0, 0.2);
+}
+#customToast.show-toast {
+  visibility: visible;
+  animation: fadein 0.5s, fadeout 0.5s 2.5s;
+}
+
+/* ========== Slide-up Sheets (existing) ========== */
+.slide-up {
+  position: fixed;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  max-width: 720px;
+  width: 100%;
+  height: 65vh;
+  overflow-y: auto;
+  background: white;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+  padding: 20px;
+  border-top-left-radius: 12px;
+  border-top-right-radius: 12px;
+  z-index: 1100; /* above header/nav */
+  transition: transform 0.25s ease;
+  transform: translateY(0%);
+  margin: 0 auto;
+}
+.slide-up.hidden {
+  transform: translateY(100%);
+}
+
+.sheet-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+#earningsSheet.slide-up {
+  padding-top: 12px;
+}
+#earningsSheet .sheet-header {
+  margin: 0 0 8px 0;
+}
+#earningsSheet .sheet-header h2 {
+  margin: 0;
+}
+#earningsSheet .form-row:has(#totalEarningsGrubhub),
+#earningsSheet .form-row:has(#totalEarningsUber),
+#earningsSheet .form-row:has(#grandTotalEarnings) {
+  margin-top: 14px;
+  font-weight: 600;
+}
+#earningsSheet hr {
+  margin: 14px 0;
+}
+
+#closeSheetBtn,
+#closeEarningsBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  background: #cc0000;
+  color: #fff;
+  width: 42px;
+  height: 42px;
+  border-radius: 8px;
+  padding: 0;
+}
+#closeSheetBtn:hover,
+#closeEarningsBtn:hover {
+  background: #ff8080;
+}
+
+/* Earnings inputs (right aligned & compact) */
+.form-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.form-row label {
+  flex: 1 1 auto;
+}
+#earningsSheet input[type="number"] {
+  width: 75px;
+  text-align: right;
+  margin-left: 10px;
+}
+
+/* ========== Existing deliveries UI (kept for index.html) ========== */
 table {
   border-collapse: collapse;
   width: 100%;
-  max-width: 700px;
-  margin-bottom: 20px;
+  margin-bottom: 16px;
   background-color: white;
 }
-
 th,
 td {
   border: 1px solid gray;
   padding: 8px 12px;
   text-align: left;
 }
-
 th {
   background-color: #ecf0f1;
 }
 
-input[type="number"] {
-  width: 100%;
-  padding: 6px;
-  box-sizing: border-box;
-}
-
-.controls,
-.bottom-controls {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 10px;
-  justify-content: center;
-  margin-top: 10px;
-}
-
 .checkbox-group {
-  max-width: 700px;
   width: 100%;
   margin-top: 20px;
 }
-
 .checkbox-row {
   display: flex;
   align-items: center;
   justify-content: space-between;
-
-  background-color: white;
+  background-color: #fff;
   padding: 16px 20px;
-  /*border: 1px solid #ccc;*/
   border-radius: 14px;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  box-shadow: var(--shadow);
   margin-bottom: 12px;
   cursor: pointer;
-
-  transition: box-shadow 0.2s ease;
   position: relative;
-  /*flex-wrap: wrap; /* allows button to stay within layout if overflow happens */
 }
-
 .checkbox-left {
   display: flex;
   align-items: center;
   gap: 10px;
-  width: 32px;
-  height: 32px;
 }
-
 .checkbox-label {
   font-size: 16px;
 }
-
 .timestamp {
   font-size: 0.85em;
   color: #555;
   white-space: nowrap;
 }
 
-.remove-btn {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  height: 100%;
-  padding: 0 10px;
-  background: none;
-  border: none;
-  font-size: 18px;
-  color: #888;
-  cursor: pointer;
-  position: absolute;
-  top: 0;
-  right: 0;
-}
-
-.remove-btn:hover {
-  background-color: #0d6efd;
-  color: white;
-}
-
+.remove-btn,
 .arrow-btn {
   display: flex;
   align-items: center;
@@ -133,246 +434,26 @@ input[type="number"] {
   top: 0;
   right: 0;
 }
-
+.remove-btn:hover {
+  background-color: #0d6efd;
+  color: #fff;
+}
 .arrow-btn:hover {
   background-color: #00b06b;
-  color: white;
+  color: #fff;
 }
 
-#summarySection {
-  display: none;
-  max-width: 600px;
-  margin-top: 30px;
-  background: #ffffff;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-  padding: 15px;
-}
-
-/* Button Styles */
-button {
-  padding: 10px 20px;
-  border-radius: 5px;
-  cursor: pointer;
-}
-
-.btn-primary {
-  background-color: #2ecc71;
-  color: white;
-  border: none;
-}
-
-.btn-primary:hover,
-.btn-primary:active {
-  background-color: #27ae60;
-}
-
-.btn-secondary {
-  background-color: transparent;
-  border: 2px solid #2ecc71;
-  color: #2ecc71;
-}
-
-.btn-secondary:hover,
-.btn-secondary:active {
-  background-color: #27ae60;
-  border-color: #27ae60;
-  color: white;
-}
-
-.btn-tertiary {
-  background-color: black;
-  color: white;
-  border: none;
-}
-
-.btn-tertiary:hover,
-.btn-tertiary:active {
-  background-color: #333333;
-}
-
-.btn-quaternary {
-  background-color: #0d6efd;
-  color: white;
-  border: none;
-  width: 144px;
-  height: 48px;
-}
-
-.btn-quaternary:hover,
-.btn-quaternary:active {
-  background-color: #0b5ed7;
-}
-
-/* Calculation Button for Earnings Summary*/
-.btn-calculate {
-  background-color: black;
-  color: white;
-  border: none;
-  width: 385px;
-  height: 48px;
-  font-size: 16px;
-  margin-top: 20px;
-}
-
-/* Toast */
-#customToast {
-  visibility: hidden;
-  min-width: 250px;
-  background-color: black;
-  color: #28a745;
-  text-align: center;
-  border-radius: 6px;
-  padding: 12px;
-  position: fixed;
-  z-index: 9999;
-  left: 50%;
-  bottom: 40px;
-  transform: translateX(-50%);
-  font-size: 16px;
-  box-shadow: 0px 0px 10px rgba(0, 0, 0, 0.2);
-}
-
-#customToast.show-toast {
-  visibility: visible;
-  animation: fadein 0.5s, fadeout 0.5s 2.5s;
-}
-
-.slide-up {
-  position: fixed;
-  bottom: 0;
-  left: 0;
-  max-width: 600px;
-  width: 90%;
-  height: 65vh;
-  max-height: none;
-  overflow-y: auto;
-  background: white;
-  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
-  padding: 20px;
-  border-top-left-radius: 12px;
-  border-top-right-radius: 12px;
-  z-index: 1000;
-  transition: transform 0.3s ease;
-  transform: translateY(0%);
-}
-.slide-up.hidden {
-  transform: translateY(100%);
-}
-.sheet-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-/* Pull the whole sheet content up slightly */
-#earningsSheet.slide-up {
-  padding-top: 12px; /* was 20px */
-}
-
-/* Make the header sit tight to the top */
-#earningsSheet .sheet-header {
-  margin-top: 0;
-  margin-bottom: 8px; /* subtle spacing under the header */
-}
-
-/* Ensure the H2 itself has no extra top margin */
-#earningsSheet .sheet-header h2 {
-  margin: 0;
-}
-
-/* Add top spacing above each section's Total row */
-#earningsSheet .form-row:has(#totalEarningsGrubhub),
-#earningsSheet .form-row:has(#totalEarningsUber),
-#earningsSheet .form-row:has(#grandTotalEarnings) {
-  margin-top: 14px; /* adjust to taste */
-  font-weight: 600; /* optional: emphasize total line */
-}
-
-#earningsSheet hr {
-  margin-top: 14px; /* space under totals */
-  margin-bottom: 14px;
-}
-
-#closeSheetBtn {
-  display: flex; /* enable flexbox */
-  align-items: center; /* vertical center */
-  justify-content: center; /* horizontal center */
-  font-size: 24px; /* size of the × */
-  background: #cc0000; /* red background */
-  border: none;
-  cursor: pointer;
-  color: white;
-  border-radius: 8px;
-  width: 42px;
-  height: 42px;
-  line-height: 1;
-  padding: 0;
-}
-#closeSheetBtn:hover {
-  background: #ff8080;
-  color: white;
-}
-
-/* Style the Earnings sheet close button (matches the other sheet) */
-#closeEarningsBtn {
-  display: flex; /* enable flexbox */
-  align-items: center; /* vertical center */
-  justify-content: center; /* horizontal center */
-  font-size: 24px; /* size of the × */
-  background: #cc0000; /* red background */
-  border: none;
-  cursor: pointer;
-  color: white;
-  border-radius: 8px;
-  width: 42px;
-  height: 42px;
-  line-height: 1;
-  padding: 0;
-}
-
-#closeEarningsBtn:hover {
-  background: #ff8080;
-  color: white;
-}
-
+/* Earnings controls row visibility */
 #earningsControls {
   display: none;
-  justify-content: flex-start;
+  gap: 10px;
   margin-top: 10px;
 }
-
 #earningsControls button {
-  margin-right: 10px;
+  margin-right: 0;
 }
 
-#earningsSheet input[type="number"] {
-  width: 75px;
-  margin-left: 10px;
-}
-
-#earningsSheet p {
-  margin: 10px 0;
-}
-
-/* Make each earnings row a flex row with the input on the right */
-.form-row {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-}
-
-/* Labels take remaining space so the input hugs the right side */
-.form-row label {
-  flex: 1 1 auto;
-}
-
-/* Earnings inputs: right-aligned, half the old width */
-#earningsSheet input[type="number"] {
-  width: 75px; /* was 150px */
-  margin-left: 10px;
-  text-align: right; /* right-align numbers in the box */
-}
-
+/* Animations */
 @keyframes fadein {
   from {
     bottom: 20px;
@@ -383,7 +464,6 @@ button {
     opacity: 1;
   }
 }
-
 @keyframes fadeout {
   from {
     bottom: 40px;

@@ -1,6 +1,7 @@
 const MAX_MEALS = 25;
 let activeMealElements = null;
 
+/* ---------- Helpers ---------- */
 function formatNow() {
   return new Date().toLocaleString();
 }
@@ -16,62 +17,142 @@ function formatForExport(dateStr) {
 
 function formatDuration(start, end) {
   const diff = end - start;
-  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  if (!isFinite(diff) || diff < 0) return "Pending";
   const hrs = Math.floor(diff / (1000 * 60 * 60));
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
   return `${hrs} hour${hrs !== 1 ? "s" : ""} ${mins} minute${
     mins !== 1 ? "s" : ""
   }`;
 }
 
+/* ---------- Toast (used by copy) ---------- */
+function showToast(msg) {
+  const toast = document.getElementById("customToast");
+  if (!toast) return;
+  toast.textContent = msg;
+  toast.classList.add("show-toast");
+  setTimeout(() => toast.classList.remove("show-toast"), 3000);
+}
+
+/* ---------- State ---------- */
 function saveState() {
+  const prev = JSON.parse(localStorage.getItem("deliveryAppState") || "{}");
+
+  // Base object seeded from previous to avoid accidental wipes
   const state = {
-    meals: [],
-    startTime: document.getElementById("startTime").textContent,
-    endTime: document.getElementById("endTime").textContent,
-    odometerStart: document.getElementById("odoStart").value,
-    odometerEnd: document.getElementById("odoEnd").value,
+    meals: Array.isArray(prev.meals) ? prev.meals : [],
+    startTime: prev.startTime || "",
+    endTime: prev.endTime || "",
+    odometerStart: prev.odometerStart || "",
+    odometerEnd: prev.odometerEnd || "",
   };
 
-  document.querySelectorAll(".checkbox-row").forEach((row) => {
-    const checkbox = row.querySelector(".task-checkbox");
-    const label = checkbox.dataset.label;
-    const timestamp = row.querySelector(".timestamp").textContent;
-    const delivered = row.dataset.delivered || "";
-    const duration = row.dataset.duration || "";
-    state.meals.push({
-      label,
-      checked: checkbox.checked,
-      timestamp,
-      delivered,
-      duration,
+  // Update start/end if present on page
+  const startEl = document.getElementById("startTime");
+  const endEl = document.getElementById("endTime");
+  if (startEl) state.startTime = startEl.textContent || "";
+  if (endEl) state.endTime = endEl.textContent || "";
+
+  // Update odometers if present on page (Home)
+  const odoStartEl = document.getElementById("odoStart");
+  const odoEndEl = document.getElementById("odoEnd");
+  if (odoStartEl) state.odometerStart = odoStartEl.value || "";
+  if (odoEndEl) state.odometerEnd = odoEndEl.value || "";
+
+  // Only rebuild the meals array on the Deliveries page (where the list exists)
+  const hasDeliveriesList = !!document.getElementById("checkboxGroup");
+  if (hasDeliveriesList) {
+    state.meals = [];
+    document.querySelectorAll(".checkbox-row").forEach((row) => {
+      const checkbox = row.querySelector(".task-checkbox");
+      const label = checkbox.dataset.label;
+      const timestamp = row.querySelector(".timestamp").textContent;
+      const delivered = row.dataset.delivered || "";
+      const duration = row.dataset.duration || "";
+      state.meals.push({
+        label,
+        checked: checkbox.checked,
+        timestamp,
+        delivered,
+        duration,
+      });
     });
-  });
+  }
 
   localStorage.setItem("deliveryAppState", JSON.stringify(state));
 }
 
 function loadState() {
-  const saved = JSON.parse(localStorage.getItem("deliveryAppState"));
-  if (saved) {
-    document.getElementById("startTime").textContent = saved.startTime || "";
-    document.getElementById("endTime").textContent = saved.endTime || "";
-    document.getElementById("odoStart").value = saved.odometerStart || "";
-    document.getElementById("odoEnd").value = saved.odometerEnd || "";
-    document.getElementById("checkboxGroup").innerHTML = "";
-    saved.meals.forEach((meal) =>
-      addMeal(
-        meal.label,
-        meal.checked,
-        meal.timestamp,
-        meal.delivered,
-        meal.duration
-      )
-    );
-  } else {
-    addMeal("1st Meal");
+  const saved = JSON.parse(localStorage.getItem("deliveryAppState") || "{}");
+  if (!saved.meals) saved.meals = [];
+
+  // Deliveries page (deliveries.html)
+  if (document.getElementById("checkboxGroup")) {
+    const group = document.getElementById("checkboxGroup");
+    group.innerHTML = "";
+    if (saved.meals.length) {
+      saved.meals.forEach((m) =>
+        addMeal(m.label, m.checked, m.timestamp, m.delivered, m.duration)
+      );
+    } else {
+      addMeal("1st Meal");
+    }
+    ensureCopyButton(); // single Copy Message button at bottom
+  }
+
+  // Earnings (labels)
+  if (document.getElementById("earningsTotals")) {
+    refreshEarningsLabels();
   }
 }
 
+/* ---------- SINGLE Copy Message button (not per-tile) ---------- */
+function ensureCopyButton() {
+  const group = document.getElementById("checkboxGroup");
+  if (!group) return;
+
+  let container = document.getElementById("copyMessageContainer");
+  if (!container) {
+    container = document.createElement("div");
+    container.id = "copyMessageContainer";
+    container.style.margin = "8px 0 14px 0";
+
+    const btn = document.createElement("button");
+    btn.id = "copyMessageBtn";
+    btn.className = "btn-quaternary";
+    btn.textContent = "Copy Message";
+    btn.onclick = () => {
+      // Prefer legacy function if present (your original behavior)
+      if (typeof window.copyText1 === "function") {
+        window.copyText1();
+        return;
+      }
+      // Fallback: build a message from the last (most recent) tile
+      const rows = group.querySelectorAll(".checkbox-row");
+      const last = rows[rows.length - 1];
+      if (last) {
+        const label =
+          last.querySelector(".task-checkbox")?.dataset.label || "Meal";
+        const accepted =
+          last.querySelector(".timestamp")?.textContent || "Pending";
+        const delivered = last.dataset.delivered || "Pending";
+        const duration = last.dataset.duration || "Pending";
+        const msg = `${label} — ${accepted} — Delivered: ${delivered} — Duration: ${duration}`;
+        navigator.clipboard?.writeText(msg).catch(() => {});
+      }
+      showToast("Message copied");
+    };
+
+    container.appendChild(btn);
+  } else {
+    // If it exists, move it to the end (under the most recent tile)
+    container.remove();
+  }
+
+  group.appendChild(container);
+}
+
+/* ---------- Deliveries UI ---------- */
 function addMeal(
   label = null,
   isChecked = false,
@@ -113,6 +194,7 @@ function addMeal(
     count > 0 && !isChecked && !timestampValue ? "inline" : "none";
   removeBtn.onclick = () => {
     group.removeChild(row);
+    ensureCopyButton(); // keep the single Copy button at bottom
     saveState();
   };
 
@@ -129,14 +211,14 @@ function addMeal(
     if (row.dataset.delivered) {
       const deliveredDate = new Date(row.dataset.delivered);
       duration = formatDuration(acceptedDate, deliveredDate);
-    } else {
-      duration = formatDuration(acceptedDate, new Date()); // Accepted → NOW
+    } else if (acceptedRaw) {
+      duration = formatDuration(acceptedDate, new Date());
     }
 
     document.getElementById("slideUpSheet").classList.remove("hidden");
     document.getElementById("mealLabelInSheet").textContent = mealLabel;
     document.getElementById("acceptedTimeInSheet").textContent =
-      timestamp.textContent;
+      timestamp.textContent || "Pending";
     document.getElementById("deliveredTimeInSheet").textContent =
       latestDelivered;
     document.getElementById("durationInSheet").textContent = duration;
@@ -174,6 +256,10 @@ function addMeal(
   row.appendChild(removeBtn);
   row.appendChild(arrowBtn);
   group.appendChild(row);
+
+  // Ensure a single, global Copy button appears once at the end
+  ensureCopyButton();
+
   saveState();
 }
 
@@ -188,301 +274,339 @@ function ordinalSuffix(i) {
 
 function resetAll() {
   localStorage.removeItem("deliveryAppState");
-  document.getElementById("startTime").textContent = "";
-  document.getElementById("endTime").textContent = "";
-  document.getElementById("odoStart").value = "";
-  document.getElementById("odoEnd").value = "";
-  document.getElementById("summarySection").style.display = "none";
-  document.getElementById("checkboxGroup").innerHTML = "";
-  document.getElementById("earningsControls").style.display = "none";
-  addMeal("1st Meal");
+  if (document.getElementById("checkboxGroup")) {
+    document.getElementById("checkboxGroup").innerHTML = "";
+    addMeal("1st Meal");
+    ensureCopyButton();
+  }
 }
 
-function computeSummary() {
-  const startText = document.getElementById("startTime").textContent;
-  const endText = document.getElementById("endTime").textContent;
-  const odoStart = parseFloat(document.getElementById("odoStart").value);
-  const odoEnd = parseFloat(document.getElementById("odoEnd").value);
-  const summary = document.getElementById("summarySection");
+/* ---------- Home page live logic ---------- */
+let homeDurationTimer = null;
 
-  document.getElementById("earningsControls").style.display = "flex";
+function initHomePage() {
+  const deliveriesPill = document.getElementById("deliveriesPill");
+  const earningsPill = document.getElementById("earningsPill");
+  const mileagePill = document.getElementById("mileagePill");
+  const durationPill = document.getElementById("durationPill");
+  if (!deliveriesPill || !earningsPill || !mileagePill || !durationPill) return; // not on home
 
-  let onlineText = "Pending";
-  if (startText) {
-    const startTime = new Date(startText);
-    const endTime = endText ? new Date(endText) : new Date();
-    const diffMs = endTime - startTime;
-    const diffHrs = Math.floor(diffMs / (1000 * 60 * 60));
-    const diffMin = Math.floor((diffMs % (1000 * 60 * 60)) / (1000 * 60));
-    onlineText = `${diffHrs} hour${diffHrs !== 1 ? "s" : ""} ${diffMin} minute${
-      diffMin !== 1 ? "s" : ""
-    }`;
+  const state = JSON.parse(localStorage.getItem("deliveryAppState") || "{}");
+  const meals = Array.isArray(state.meals) ? state.meals : [];
+  const deliveries = meals.filter((m) => m.checked).length;
+  deliveriesPill.textContent = `Total Deliveries: ${deliveries} Deliveries`;
+
+  const es = JSON.parse(localStorage.getItem("earningsSummary") || "{}");
+  const grand = es?.grandTotal ? Number(es.grandTotal).toFixed(2) : "0.00";
+  earningsPill.textContent = `Total Earnings: $${grand}`;
+
+  const odoStartEl = document.getElementById("odoStart");
+  const odoEndEl = document.getElementById("odoEnd");
+
+  // Prefill odometers
+  if (odoStartEl) odoStartEl.value = state?.odometerStart ?? "";
+  if (odoEndEl) odoEndEl.value = state?.odometerEnd ?? "";
+
+  function recomputeMileage() {
+    const a = parseFloat(odoStartEl?.value);
+    const b = parseFloat(odoEndEl?.value);
+    let text = "Pending";
+    if (!isNaN(a) && !isNaN(b) && b > a) text = `${(b - a).toFixed(1)} Miles`;
+    mileagePill.textContent = `Total Mileage: ${text}`;
   }
 
-  const totalDeliveries = document.querySelectorAll(
-    ".task-checkbox:checked"
-  ).length;
+  odoStartEl?.addEventListener("blur", () => {
+    saveState();
+    recomputeMileage();
+  });
+  odoEndEl?.addEventListener("blur", () => {
+    saveState();
+    recomputeMileage();
+  });
+  recomputeMileage();
 
-  let mileageText = "Pending";
-  if (!isNaN(odoStart) && !isNaN(odoEnd) && odoEnd > odoStart) {
-    mileageText = `${(odoEnd - odoStart).toFixed(1)} Miles`;
+  // Mirror start/end labels
+  const startEl = document.getElementById("startTime");
+  const endEl = document.getElementById("endTime");
+  if (startEl) startEl.textContent = state?.startTime ?? "";
+  if (endEl) endEl.textContent = state?.endTime ?? "";
+
+  function tickDuration() {
+    const startText = (
+      document.getElementById("startTime")?.textContent || ""
+    ).trim();
+    const endText = (
+      document.getElementById("endTime")?.textContent || ""
+    ).trim();
+    if (!startText) {
+      durationPill.textContent = "Duration: Pending";
+      return;
+    }
+    const start = new Date(startText);
+    const end = endText ? new Date(endText) : new Date();
+    durationPill.textContent = `Duration: ${formatDuration(start, end)}`;
   }
 
-  document.getElementById(
-    "summaryOnline"
-  ).textContent = `• Total Online: ${onlineText}`;
-  document.getElementById(
-    "summaryDeliveries"
-  ).textContent = `• Total Deliveries: ${totalDeliveries} Deliveries`;
-  document.getElementById(
-    "summaryMileage"
-  ).textContent = `• Total Mileage: ${mileageText}`;
-  summary.style.display = "block";
+  clearInterval(homeDurationTimer);
+  homeDurationTimer = setInterval(tickDuration, 1000);
+  tickDuration();
 }
 
-function copyText1() {
-  const now = new Date();
-  const hour = now.getHours();
-  let message = "Thank you for your support and generous tip!";
+/* ---------- Earnings helpers ---------- */
+function refreshEarningsLabels() {
+  const saved = JSON.parse(localStorage.getItem("earningsSummary") || "{}");
+  const gh = saved.grubhub || {};
+  const ue = saved.uberEats || {};
+  if (document.getElementById("ghTotal"))
+    document.getElementById("ghTotal").textContent = gh.total ?? "0.00";
+  if (document.getElementById("ueTotal"))
+    document.getElementById("ueTotal").textContent = ue.total ?? "0.00";
+  if (document.getElementById("grandTotal"))
+    document.getElementById("grandTotal").textContent =
+      saved.grandTotal ?? "0.00";
+}
 
-  if (hour >= 5 && hour < 12) {
-    message += " Have a blessed morning.";
-  } else if (hour >= 12 && hour < 17) {
-    message += " Have a blessed afternoon.";
-  } else if (hour >= 17 && hour <= 23) {
-    message += " Have a blessed evening.";
-  } else {
-    message += " Have a blessed day.";
+/* ---------- Lucide helpers ---------- */
+function initIcons() {
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
   }
+}
 
-  navigator.clipboard.writeText(message).then(() => {
-    showToast("Message copied to clipboard!");
+/* ---------- Export ---------- */
+function exportToJson() {
+  const deliveryAppState = JSON.parse(
+    localStorage.getItem("deliveryAppState") || "{}"
+  );
+  const earningsSummary = JSON.parse(
+    localStorage.getItem("earningsSummary") || "{}"
+  );
+
+  const payload = {
+    exportedAt: new Date().toISOString(),
+    deliveryAppState,
+    earningsSummary,
+  };
+
+  const blob = new Blob([JSON.stringify(payload, null, 2)], {
+    type: "application/json",
+  });
+
+  const filename = "export.json";
+
+  const a = document.createElement("a");
+  a.href = URL.createObjectURL(blob);
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  URL.revokeObjectURL(a.href);
+  a.remove();
+
+  // optional toast
+  if (typeof showToast === "function") showToast("Exported data as JSON");
+}
+
+/* ---------- Bottom nav highlight ---------- */
+function setActiveNav() {
+  const path = location.pathname.split("/").pop() || "home.html";
+  document.querySelectorAll(".bottom-nav .nav-item").forEach((a) => {
+    const href = a.getAttribute("href") || "";
+    const file = href.split("/").pop();
+    a.classList.toggle("active", file === path);
   });
 }
 
-function showToast(msg) {
-  const toast = document.getElementById("customToast");
-  toast.textContent = msg;
-  toast.className = "show-toast";
-  setTimeout(() => {
-    toast.className = toast.className.replace("show-toast", "");
-  }, 3000);
-}
-
+/* ---------- DOM Ready ---------- */
 window.addEventListener("DOMContentLoaded", () => {
   loadState();
 
-  document.getElementById("startBtn").onclick = () => {
-    document.getElementById("startTime").textContent = formatNow();
-    saveState();
-  };
-
-  document.getElementById("endBtn").onclick = () => {
-    document.getElementById("endTime").textContent = formatNow();
-    saveState();
-  };
-
-  document.getElementById("odoStart").oninput = saveState;
-  document.getElementById("odoEnd").oninput = saveState;
-
-  document.getElementById("addMealBtn").onclick = () => addMeal();
-  document.getElementById("resetBtn").onclick = resetAll;
-  document.getElementById("computeBtn").onclick = computeSummary;
-
-  document.getElementById("closeSheetBtn").onclick = () => {
-    document.getElementById("slideUpSheet").classList.add("hidden");
-  };
-
-  // EXPORT JSON (Fix #1: define `state`)
-  document.getElementById("exportJsonBtn").onclick = () => {
-    // Read the main app state (meals, times, odo, etc.)
-    const state = JSON.parse(localStorage.getItem("deliveryAppState")) || {};
-
-    // ---- Meals formatting ----
-    const formattedMeals = (state.meals || []).map((meal) => ({
-      label: meal.label,
-      checked: meal.checked,
-      timestamp: formatForExport(meal.timestamp),
-      delivered: formatForExport(meal.delivered),
-      duration: meal.duration || "",
-    }));
-
-    // ---- Earnings (legacy fallback) ----
-    // Some older versions stored a single total in state.earnings; keep a fallback just in case.
-    const formattedEarningsLegacy = {};
-    if (state.earnings) {
-      formattedEarningsLegacy.deliveryPay = parseFloat(
-        state.earnings.deliveryPay || 0
-      ).toFixed(2);
-      formattedEarningsLegacy.tips = parseFloat(
-        state.earnings.tips || 0
-      ).toFixed(2);
-      formattedEarningsLegacy.adjustment = parseFloat(
-        state.earnings.adjustment || 0
-      ).toFixed(2);
-      formattedEarningsLegacy.total = parseFloat(
-        (state.earnings.total || "").toString().replace(/^\$/, "") || 0
-      ).toFixed(2);
-    }
-
-    // ---- NEW earnings source ----
-    // This is where the latest Grubhub/Uber/Grand Total is stored by the Calculate button.
-    const earningsSummary = JSON.parse(
-      localStorage.getItem("earningsSummary") || "{}"
-    );
-
-    // ---- Summary text from UI ----
-    const summary = {
-      totalOnline: document
-        .getElementById("summaryOnline")
-        .textContent.replace("• Total Online: ", ""),
-      totalDeliveries: document
-        .getElementById("summaryDeliveries")
-        .textContent.replace("• Total Deliveries: ", ""),
-      totalMileage: document
-        .getElementById("summaryMileage")
-        .textContent.replace("• Total Mileage: ", ""),
+  // Start/End on any page that shows them (Home only)
+  const startBtn = document.getElementById("startBtn");
+  if (startBtn)
+    startBtn.onclick = () => {
+      const el = document.getElementById("startTime");
+      if (el) el.textContent = formatNow();
+      saveState();
+      if (homeDurationTimer) {
+        clearInterval(homeDurationTimer);
+        homeDurationTimer = null;
+      }
+      initHomePage();
     };
 
-    // ---- Build export payload ----
-    const exportData = {
-      startTime: formatForExport(state.startTime),
-      endTime: formatForExport(state.endTime),
-      odometerStart: state.odometerStart || "",
-      odometerEnd: state.odometerEnd || "",
-      meals: formattedMeals,
-      // Prefer the new multi‑courier structure; fall back to legacy if it doesn't exist yet.
-      earnings: Object.keys(earningsSummary).length
-        ? earningsSummary
-        : formattedEarningsLegacy,
-      summary,
+  const endBtn = document.getElementById("endBtn");
+  if (endBtn)
+    endBtn.onclick = () => {
+      const el = document.getElementById("endTime");
+      if (el) el.textContent = formatNow();
+      saveState();
+      initHomePage();
     };
 
-    // ---- Download ----
-    const blob = new Blob([JSON.stringify(exportData, null, 2)], {
-      type: "application/json",
-    });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = "Export.json";
-    a.click();
-    URL.revokeObjectURL(url);
-  };
+  // Add/Reset (Deliveries page)
+  if (document.getElementById("addMealBtn"))
+    document.getElementById("addMealBtn").onclick = () => addMeal();
+  if (document.getElementById("resetBtn"))
+    document.getElementById("resetBtn").onclick = resetAll;
 
-  // Show Earnings Sheet (prefill from earningsSummary)
-  document.getElementById("openEarningsBtn").onclick = () => {
-    try {
-      const saved = JSON.parse(localStorage.getItem("earningsSummary")) || {};
-      const gh = saved.grubhub || {};
-      const ue = saved.uberEats || {};
+  // Slide-up close buttons (if on page)
+  if (document.getElementById("closeSheetBtn"))
+    document.getElementById("closeSheetBtn").onclick = () =>
+      document.getElementById("slideUpSheet").classList.add("hidden");
+  if (document.getElementById("closeEarningsBtn"))
+    document.getElementById("closeEarningsBtn").onclick = () =>
+      document.getElementById("earningsSheet").classList.add("hidden");
 
-      const setVal = (id, val) => {
-        const el = document.getElementById(id);
-        if (el)
-          el.value = val != null && val !== "" ? Number(val).toFixed(2) : "";
-      };
-      setVal("deliveryPayGrubhub", gh.deliveryPay);
-      setVal("tipsPayGrubhub", gh.tips);
-      setVal("adjustmentPayGrubhub", gh.adjustmentPay);
-      setVal("deliveryPayUber", ue.deliveryPay);
-      setVal("tipsPayUber", ue.tips);
-      setVal("adjustmentPayUber", ue.adjustmentPay);
+  // Earnings open button (on earnings.html)
+  if (document.getElementById("openEarningsBtn")) {
+    document.getElementById("openEarningsBtn").onclick = () => {
+      try {
+        const saved = JSON.parse(
+          localStorage.getItem("earningsSummary") || "{}"
+        );
+        const gh = saved.grubhub || {};
+        const ue = saved.uberEats || {};
+        const setVal = (id, val) => {
+          const el = document.getElementById(id);
+          if (el)
+            el.value = val != null && val !== "" ? Number(val).toFixed(2) : "";
+        };
+        setVal("deliveryPayGrubhub", gh.deliveryPay);
+        setVal("tipsPayGrubhub", gh.tips);
+        setVal("adjustmentPayGrubhub", gh.adjustmentPay);
+        setVal("deliveryPayUber", ue.deliveryPay);
+        setVal("tipsPayUber", ue.tips);
+        setVal("adjustmentPayUber", ue.adjustmentPay);
 
-      const setText = (id, val) => {
-        const el = document.getElementById(id);
-        if (el)
-          el.textContent =
-            val != null && val !== "" ? Number(val).toFixed(2) : "Pending";
-      };
-      setText("totalEarningsGrubhub", gh.total);
-      setText("totalEarningsUber", ue.total);
-      setText("grandTotalEarnings", saved.grandTotal);
-    } catch (_) {
-      // ignore prefill errors
-    }
+        const setText = (id, val) => {
+          const el = document.getElementById(id);
+          if (el)
+            el.textContent =
+              val != null && val !== "" ? Number(val).toFixed(2) : "Pending";
+        };
+        setText("totalEarningsGrubhub", gh.total);
+        setText("totalEarningsUber", ue.total);
+        setText("grandTotalEarnings", saved.grandTotal);
+      } catch (_) {}
+      document.getElementById("earningsSheet").classList.remove("hidden");
+    };
+  }
 
-    document.getElementById("earningsSheet").classList.remove("hidden");
-  };
+  // Earnings calculate & auto-close
+  if (document.getElementById("calcEarningsBtn")) {
+    document
+      .getElementById("calcEarningsBtn")
+      .addEventListener("click", function () {
+        const ghDelivery =
+          parseFloat(document.getElementById("deliveryPayGrubhub").value) || 0;
+        const ghTips =
+          parseFloat(document.getElementById("tipsPayGrubhub").value) || 0;
+        const ghAdjust =
+          parseFloat(document.getElementById("adjustmentPayGrubhub").value) ||
+          0;
+        const ueDelivery =
+          parseFloat(document.getElementById("deliveryPayUber").value) || 0;
+        const ueTips =
+          parseFloat(document.getElementById("tipsPayUber").value) || 0;
+        const ueAdjust =
+          parseFloat(document.getElementById("adjustmentPayUber").value) || 0;
 
-  // Calculate + save earningsSummary
-  document
-    .getElementById("calcEarningsBtn")
-    .addEventListener("click", function () {
-      const ghDelivery =
-        parseFloat(document.getElementById("deliveryPayGrubhub").value) || 0;
-      const ghTips =
-        parseFloat(document.getElementById("tipsPayGrubhub").value) || 0;
-      const ghAdjust =
-        parseFloat(document.getElementById("adjustmentPayGrubhub").value) || 0;
+        const totalGrubhub = ghDelivery + ghTips + ghAdjust;
+        const totalUber = ueDelivery + ueTips + ueAdjust;
+        const grandTotal = totalGrubhub + totalUber;
 
-      const ueDelivery =
-        parseFloat(document.getElementById("deliveryPayUber").value) || 0;
-      const ueTips =
-        parseFloat(document.getElementById("tipsPayUber").value) || 0;
-      const ueAdjust =
-        parseFloat(document.getElementById("adjustmentPayUber").value) || 0;
+        document.getElementById("totalEarningsGrubhub").textContent =
+          totalGrubhub.toFixed(2);
+        document.getElementById("totalEarningsUber").textContent =
+          totalUber.toFixed(2);
+        document.getElementById("grandTotalEarnings").textContent =
+          grandTotal.toFixed(2);
 
-      const totalGrubhub = ghDelivery + ghTips + ghAdjust;
-      const totalUber = ueDelivery + ueTips + ueAdjust;
-      const grandTotal = totalGrubhub + totalUber;
+        const earningsData = {
+          grubhub: {
+            deliveryPay: ghDelivery.toFixed(2),
+            tips: ghTips.toFixed(2),
+            adjustmentPay: ghAdjust.toFixed(2),
+            total: totalGrubhub.toFixed(2),
+          },
+          uberEats: {
+            deliveryPay: ueDelivery.toFixed(2),
+            tips: ueTips.toFixed(2),
+            adjustmentPay: ueAdjust.toFixed(2),
+            total: totalUber.toFixed(2),
+          },
+          grandTotal: grandTotal.toFixed(2),
+        };
+        localStorage.setItem("earningsSummary", JSON.stringify(earningsData));
 
-      document.getElementById("totalEarningsGrubhub").textContent =
-        totalGrubhub.toFixed(2);
-      document.getElementById("totalEarningsUber").textContent =
-        totalUber.toFixed(2);
-      document.getElementById("grandTotalEarnings").textContent =
-        grandTotal.toFixed(2);
+        document.getElementById("earningsSheet").classList.add("hidden");
+        refreshEarningsLabels();
+      });
+  }
 
-      const earningsData = {
-        grubhub: {
-          deliveryPay: ghDelivery.toFixed(2),
-          tips: ghTips.toFixed(2),
-          adjustmentPay: ghAdjust.toFixed(2),
-          total: totalGrubhub.toFixed(2),
-        },
-        uberEats: {
-          deliveryPay: ueDelivery.toFixed(2),
-          tips: ueTips.toFixed(2),
-          adjustmentPay: ueAdjust.toFixed(2),
-          total: totalUber.toFixed(2),
-        },
-        grandTotal: grandTotal.toFixed(2),
-      };
+  // Export (More page)
+  const exportBtn = document.getElementById("exportJsonBtn");
+  if (exportBtn) exportBtn.addEventListener("click", exportToJson);
 
-      localStorage.setItem("earningsSummary", JSON.stringify(earningsData));
-    });
-}); // <-- Fix #2: close DOMContentLoaded wrapper
+  // Delivered button inside slide-up sheet (Deliveries page)
+  const deliveredBtn = document.getElementById("markDeliveredBtn");
+  if (deliveredBtn)
+    deliveredBtn.onclick = () => {
+      if (!activeMealElements) return;
 
-// Save the state before the page is unloaded
+      const deliveredNow = new Date();
+      const deliveredStr = deliveredNow.toLocaleString();
+      const acceptedStr = activeMealElements.timestamp.textContent.replace(
+        "Accepted on: ",
+        ""
+      );
+      const acceptedDate = new Date(acceptedStr);
+      const durationStr = formatDuration(acceptedDate, deliveredNow);
+
+      // Update UI in the sheet
+      document.getElementById("deliveredTimeInSheet").textContent =
+        deliveredStr;
+      document.getElementById("durationInSheet").textContent = durationStr;
+
+      // Lock button for this tile
+      deliveredBtn.disabled = true;
+
+      // Persist on the tile
+      activeMealElements.row.dataset.delivered = deliveredStr;
+      activeMealElements.row.dataset.duration = durationStr;
+      activeMealElements.checkbox.disabled = true;
+
+      // Save state
+      saveState();
+
+      // ✅ Close the slide-up after saving
+      document.getElementById("slideUpSheet").classList.add("hidden");
+
+      // Clean up reference
+      activeMealElements = null;
+    };
+
+  // Init Lucide
+  initIcons();
+
+  // Nav active state
+  setActiveNav();
+
+  // Home live updates
+  initHomePage();
+});
+
+/* Save on unload */
 window.addEventListener("beforeunload", saveState);
 
-// Hide earnings sheet when "×" close button is clicked
-document
-  .getElementById("closeEarningsBtn")
-  .addEventListener("click", function () {
-    document.getElementById("earningsSheet").classList.add("hidden");
-  });
+/* Sync across tabs/pages */
+window.addEventListener("storage", (e) => {
+  if (e.key === "deliveryAppState" || e.key === "adminTriggerRefresh") {
+    loadState();
+    initHomePage();
+    setActiveNav();
+  }
+});
 
-document.getElementById("markDeliveredBtn").onclick = () => {
-  if (!activeMealElements) return;
-
-  const deliveredNow = new Date();
-  const deliveredStr = deliveredNow.toLocaleString();
-  const acceptedStr = activeMealElements.timestamp.textContent.replace(
-    "Accepted on: ",
-    ""
-  );
-  const acceptedDate = new Date(acceptedStr);
-  const durationStr = formatDuration(acceptedDate, deliveredNow);
-
-  document.getElementById("deliveredTimeInSheet").textContent = deliveredStr;
-  document.getElementById("durationInSheet").textContent = durationStr;
-  document.getElementById("markDeliveredBtn").disabled = true;
-
-  activeMealElements.row.dataset.delivered = deliveredStr;
-  activeMealElements.row.dataset.duration = durationStr;
-  activeMealElements.checkbox.disabled = true;
-
-  saveState();
-};
+// Re-initialize icons on bfcache restores (e.g., navigating back to a page)
+window.addEventListener("pageshow", initIcons);
