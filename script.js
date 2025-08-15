@@ -8,7 +8,7 @@ function formatNow() {
 
 function formatForExport(dateStr) {
   const d = new Date(dateStr);
-  if (isNaN(d)) return "";
+  if (isNaN(d.getTime())) return "";
   const pad = (n) => String(n).padStart(2, "0");
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
     d.getHours()
@@ -46,19 +46,24 @@ function saveState() {
     odometerStart: prev.odometerStart || "",
     odometerEnd: prev.odometerEnd || "",
   };
-
   // Update start/end if present on page
   const startEl = document.getElementById("startTime");
   const endEl = document.getElementById("endTime");
-  if (startEl) state.startTime = startEl.textContent || "";
-  if (endEl) state.endTime = endEl.textContent || "";
-
+  if (startEl && startEl.textContent.trim() !== "") {
+    state.startTime = startEl.textContent.trim();
+  }
+  if (endEl && endEl.textContent.trim() !== "") {
+    state.endTime = endEl.textContent.trim();
+  }
   // Update odometers if present on page (Home)
   const odoStartEl = document.getElementById("odoStart");
   const odoEndEl = document.getElementById("odoEnd");
-  if (odoStartEl) state.odometerStart = odoStartEl.value || "";
-  if (odoEndEl) state.odometerEnd = odoEndEl.value || "";
-
+  if (odoStartEl && odoStartEl.value.trim() !== "") {
+    state.odometerStart = odoStartEl.value.trim();
+  }
+  if (odoEndEl && odoEndEl.value.trim() !== "") {
+    state.odometerEnd = odoEndEl.value.trim();
+  }
   // Only rebuild the meals array on the Deliveries page (where the list exists)
   const hasDeliveriesList = !!document.getElementById("checkboxGroup");
   if (hasDeliveriesList) {
@@ -78,7 +83,7 @@ function saveState() {
       });
     });
   }
-
+  // Persist
   localStorage.setItem("deliveryAppState", JSON.stringify(state));
 }
 
@@ -355,6 +360,14 @@ function initHomePage() {
   const odoStartEl = document.getElementById("odoStart");
   const odoEndEl = document.getElementById("odoEnd");
 
+  // Place caret at end when focusing odometer fields
+  odoStartEl?.addEventListener("focus", () => {
+    setTimeout(() => moveCaretToEnd(odoStartEl), 0);
+  });
+  odoEndEl?.addEventListener("focus", () => {
+    setTimeout(() => moveCaretToEnd(odoEndEl), 0);
+  });
+
   // Prefill odometers
   if (odoStartEl) odoStartEl.value = state?.odometerStart ?? "";
   if (odoEndEl) odoEndEl.value = state?.odometerEnd ?? "";
@@ -416,6 +429,21 @@ function refreshEarningsLabels() {
   if (document.getElementById("grandTotal"))
     document.getElementById("grandTotal").textContent =
       saved.grandTotal ?? "0.00";
+}
+
+/* ---------- Odometer field caret jump to end helpers ---------- */
+function moveCaretToEnd(el) {
+  if (!el) return;
+  const len = (el.value || "").length;
+  // Try the standard way
+  try {
+    el.setSelectionRange(len, len);
+  } catch (_) {
+    // Fallback for number inputs in some browsers
+    const v = el.value;
+    el.value = "";
+    el.value = v;
+  }
 }
 
 /* ---------- Lucide helpers ---------- */
