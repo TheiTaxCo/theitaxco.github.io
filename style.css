@@ -230,22 +230,30 @@ button {
 .btn-primary {
   background-color: #2ecc71;
   color: white;
+  width: 144px;
+  height: 44px;
 }
 .btn-primary:hover,
 .btn-primary:active {
   background-color: #27ae60;
+  width: 144px;
+  height: 44px;
 }
 
 .btn-secondary {
   background-color: transparent;
   border: 2px solid #2ecc71;
   color: #2ecc71;
+  width: 144px;
+  height: 44px;
 }
 .btn-secondary:hover,
 .btn-secondary:active {
   background-color: #27ae60;
   border-color: #27ae60;
   color: white;
+  width: 144px;
+  height: 44px;
 }
 
 .btn-tertiary {

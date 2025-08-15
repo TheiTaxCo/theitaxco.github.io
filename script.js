@@ -273,12 +273,64 @@ function ordinalSuffix(i) {
 }
 
 function resetAll() {
+  // 1) Clear storage
   localStorage.removeItem("deliveryAppState");
-  if (document.getElementById("checkboxGroup")) {
-    document.getElementById("checkboxGroup").innerHTML = "";
+  localStorage.removeItem("earningsSummary");
+
+  // 2) Reset Deliveries UI (supports single list or Active/Completed groups)
+  const single = document.getElementById("checkboxGroup");
+  const active = document.getElementById("checkboxGroupActive");
+  const completed = document.getElementById("checkboxGroupCompleted");
+
+  if (active || completed) {
+    if (active) active.innerHTML = "";
+    if (completed) completed.innerHTML = "";
     addMeal("1st Meal");
-    ensureCopyButton();
+    if (typeof ensureCopyButton === "function") ensureCopyButton();
+  } else if (single) {
+    single.innerHTML = "";
+    addMeal("1st Meal");
+    if (typeof ensureCopyButton === "function") ensureCopyButton();
   }
+
+  // 3) Reset Earnings UI (totals section)
+  const gh = document.getElementById("ghTotal");
+  const ue = document.getElementById("ueTotal");
+  const grand = document.getElementById("grandTotal");
+  if (gh) gh.textContent = "0.00";
+  if (ue) ue.textContent = "0.00";
+  if (grand) grand.textContent = "0.00";
+
+  // 4) Reset Earnings slide-up inputs & computed labels (if sheet is present)
+  const earningsInputs = [
+    "deliveryPayGrubhub",
+    "tipsPayGrubhub",
+    "adjustmentPayGrubhub",
+    "deliveryPayUber",
+    "tipsPayUber",
+    "adjustmentPayUber",
+  ];
+  earningsInputs.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+
+  const computedLabels = [
+    "totalEarningsGrubhub",
+    "totalEarningsUber",
+    "grandTotalEarnings",
+  ];
+  computedLabels.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = "Pending";
+  });
+
+  // 5) Refresh Home pills (if on Home)
+  const earningsPill = document.getElementById("earningsPill");
+  if (earningsPill) earningsPill.textContent = "Total Earnings: $0.00";
+
+  // 6) Persist fresh state (adds back 1st Meal etc.)
+  saveState();
 }
 
 /* ---------- Home page live logic ---------- */
