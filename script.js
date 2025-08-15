@@ -6,6 +6,26 @@ function formatNow() {
   return new Date().toLocaleString();
 }
 
+// Attach caret-to-end behavior on focus for Earnings inputs
+function attachEarningsCaretHandlers() {
+  const earningsInputs = [
+    "deliveryPayGrubhub",
+    "tipsPayGrubhub",
+    "adjustmentPayGrubhub",
+    "deliveryPayUber",
+    "tipsPayUber",
+    "adjustmentPayUber",
+  ];
+  earningsInputs.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el || el.dataset.caretBound === "1") return; // avoid double-binding
+    el.addEventListener("focus", () => {
+      setTimeout(() => moveCaretToEnd(el), 0);
+    });
+    el.dataset.caretBound = "1";
+  });
+}
+
 function formatForExport(dateStr) {
   const d = new Date(dateStr);
   if (isNaN(d.getTime())) return "";
@@ -111,7 +131,39 @@ function loadState() {
   }
 }
 
-/* ---------- SINGLE Copy Message button (not per-tile) ---------- */
+// Optional: customize the base message via localStorage.setItem('copyBaseMessage', '...').
+// Falls back to your original phrase if not set.
+function getCopyBaseMessage() {
+  return (
+    localStorage.getItem("copyBaseMessage") ||
+    "Thank you for your support and generous tip!  It goes a long way for my family."
+  );
+}
+// copyText1() creates a personalized thank-you message based on the current time of day
+// (morning, afternoon, evening) and copies it to the clipboard.
+function copyText1() {
+  const base = getCopyBaseMessage();
+  const hour = new Date().getHours();
+  let message = base;
+
+  if (hour >= 5 && hour < 12) {
+    message += " Have a blessed morning.";
+  } else if (hour >= 12 && hour < 17) {
+    message += " Have a blessed afternoon.";
+  } else if (hour >= 17 && hour <= 23) {
+    message += " Have a blessed evening.";
+  } else {
+    message += " Have a blessed day.";
+  }
+
+  navigator.clipboard.writeText(message).then(() => {
+    if (typeof showToast === "function")
+      showToast("Message copied to clipboard!");
+  });
+}
+
+// ensureCopyButton() places the single "Copy Message" button below the most recent meal tile,
+// always using copyText1() for its message, and preserves existing UI styling & Lucide icon.
 function ensureCopyButton() {
   const group = document.getElementById("checkboxGroup");
   if (!group) return;
@@ -124,29 +176,9 @@ function ensureCopyButton() {
 
     const btn = document.createElement("button");
     btn.id = "copyMessageBtn";
-    btn.className = "btn-copyMessage";
+    btn.className = "btn-copyMessage"; // keep your existing styling
     btn.innerHTML = `<i data-lucide="copy"></i>`;
-    btn.onclick = () => {
-      // Prefer legacy function if present (your original behavior)
-      if (typeof window.copyText1 === "function") {
-        window.copyText1();
-        return;
-      }
-      // Fallback: build a message from the last (most recent) tile
-      const rows = group.querySelectorAll(".checkbox-row");
-      const last = rows[rows.length - 1];
-      if (last) {
-        const label =
-          last.querySelector(".task-checkbox")?.dataset.label || "Meal";
-        const accepted =
-          last.querySelector(".timestamp")?.textContent || "Pending";
-        const delivered = last.dataset.delivered || "Pending";
-        const duration = last.dataset.duration || "Pending";
-        const msg = `${label} — ${accepted} — Delivered: ${delivered} — Duration: ${duration}`;
-        navigator.clipboard?.writeText(msg).catch(() => {});
-      }
-      showToast("Message copied");
-    };
+    btn.onclick = copyText1; // ← no fallback; always copy greeting
 
     container.appendChild(btn);
   } else {
@@ -155,6 +187,11 @@ function ensureCopyButton() {
   }
 
   group.appendChild(container);
+
+  // Ensure the icon renders after DOM insert
+  if (window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons();
+  }
 }
 
 /* ---------- Deliveries UI ---------- */
@@ -307,18 +344,6 @@ function resetAll() {
   if (grand) grand.textContent = "0.00";
 
   // 4) Reset Earnings slide-up inputs & computed labels (if sheet is present)
-  const earningsInputs = [
-    "deliveryPayGrubhub",
-    "tipsPayGrubhub",
-    "adjustmentPayGrubhub",
-    "deliveryPayUber",
-    "tipsPayUber",
-    "adjustmentPayUber",
-  ];
-  earningsInputs.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.value = "";
-  });
 
   const computedLabels = [
     "totalEarningsGrubhub",
@@ -568,6 +593,8 @@ window.addEventListener("DOMContentLoaded", () => {
         setText("totalEarningsUber", ue.total);
         setText("grandTotalEarnings", saved.grandTotal);
       } catch (_) {}
+      attachEarningsCaretHandlers();
+
       document.getElementById("earningsSheet").classList.remove("hidden");
     };
   }
