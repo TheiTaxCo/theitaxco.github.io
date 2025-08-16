@@ -208,7 +208,7 @@ button {
   background: #2f6edb;
 }
 .pill.green {
-  background: #16a34a;
+  background: #035d1f;
 }
 .pill.orange {
   background: #ff6100;
@@ -285,26 +285,26 @@ button {
   border: none;
 }
 .btn-primary {
-  background-color: #2ecc71;
+  background-color: #035d1f; /*-------New GREEN Color Palette--------*/
   color: white;
   width: 144px;
   height: 44px;
 }
 .btn-primary:hover,
 .btn-primary:active {
-  background-color: #27ae60;
+  background-color: #13e95c; /*-------New GREEN Color Palette--------*/
 }
 .btn-secondary {
   background-color: transparent;
-  border: 2px solid #2ecc71;
-  color: #2ecc71;
+  border: 2px solid #035d1f; /*-------New GREEN Color Palette--------*/
+  color: #035d1f; /*-------New GREEN Color Palette--------*/
   width: 144px;
   height: 44px;
 }
 .btn-secondary:hover,
 .btn-secondary:active {
-  background-color: #27ae60;
-  border-color: #27ae60;
+  background-color: #13e95c; /*-------New GREEN Color Palette--------*/
+  border-color: #13e95c; /*-------New GREEN Color Palette--------*/
   color: white;
 }
 .btn-tertiary {
