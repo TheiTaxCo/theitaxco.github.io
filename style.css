@@ -211,7 +211,7 @@ button {
   background: #16a34a;
 }
 .pill.orange {
-  background: #f59e0b;
+  background: #ff6100;
 }
 .pill.gray {
   background: #6b7280;
@@ -329,6 +329,16 @@ button {
 /* Calculation Button for Earnings Summary*/
 .btn-calculate {
   background-color: black;
+  color: white;
+  border: none;
+  width: 385px;
+  height: 48px;
+  font-size: 16px;
+  margin-top: 20px;
+}
+
+.btn-delivered {
+  background-color: #0d6efd;
   color: white;
   border: none;
   width: 385px;
