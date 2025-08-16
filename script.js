@@ -523,6 +523,13 @@ function setActiveNav() {
 
 /* ---------- DOM Ready ---------- */
 window.addEventListener("DOMContentLoaded", () => {
+  initIcons();
+  // --- force the header icon to render if missed ---
+  const hdr = document.querySelector('.app-header [data-lucide="menu"]');
+  if (hdr && window.lucide && typeof window.lucide.createIcons === "function") {
+    window.lucide.createIcons(); // re-scan; cheap and safe
+  }
+
   loadState();
 
   // Start/End on any page that shows them (Home only)

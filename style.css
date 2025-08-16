@@ -1,8 +1,8 @@
 /* ========== Base Layout & Typography ========== */
 :root {
-  --header-bg: #e5e7eb; /* medium gray */
-  --nav-active: #000000; /* black */
-  --nav-inactive: #9ca3af; /* gray-400 */
+  --header-bg: #f0f0f0; /* medium gray */
+  --nav-active: #ff6100; /* active icon/text */
+  --nav-inactive: #000000; /* inactive icon/text */
   --surface: #ffffff;
   --border: #d1d5db;
   --shadow: 0 2px 6px rgba(0, 0, 0, 0.08);
@@ -25,7 +25,7 @@ body {
   margin: 0;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Arial,
     sans-serif;
-  background-color: #f9fafb;
+  background-color: #fafafa;
   color: #111827;
   display: flex;
   flex-direction: column;
@@ -54,17 +54,11 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
-.app-header .hamburger {
-  display: inline-flex;
-  width: 36px;
-  height: 36px;
-  border-radius: 8px;
-  align-items: center;
-  justify-content: center;
-  margin-right: 12px;
-  background: transparent;
-  border: none;
-  cursor: pointer;
+/* Header content kept above any decorative layers (safe guard) */
+.app-header::before,
+.app-header::after {
+  pointer-events: none;
+  z-index: 0;
 }
 
 .app-header .title {
@@ -72,11 +66,80 @@ button {
   font-size: 22px;
 }
 
-/* make header icons visible */
-.app-header svg {
-  width: 22px;
-  height: 22px;
-  stroke: #111827;
+/* Hamburger button in header (keep as-is) */
+.app-header {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: var(--header-h);
+  background: var(--header-bg);
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  z-index: 1002;
+  border-bottom: 1px solid var(--border);
+}
+
+/* Header content kept above any decorative layers (safe guard) */
+.app-header::before,
+.app-header::after {
+  pointer-events: none;
+  z-index: 0;
+}
+
+.app-header .title {
+  font-weight: 800;
+  font-size: 22px;
+}
+
+/* Hamburger button in header */
+.app-header .hamburger {
+  display: inline-flex;
+  flex-direction: column; /* stacks bars vertically if using 3 spans */
+  gap: 6px; /* spacing between bars (3-span variant) */
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border-radius: 8px;
+  margin-right: 12px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  color: #111827; /* icon color */
+  line-height: 0; /* avoid inline line-box artifacts */
+}
+
+/* ---- Variant A: three <span class="bar"> inside the button ---- */
+.app-header .hamburger .bar {
+  display: block;
+  width: 20px;
+  height: 2px;
+  background: currentColor;
+  border-radius: 2px;
+}
+
+/* ---- Variant B: single <span class="hamburger-bars"> inside the button ---- */
+.app-header .hamburger .hamburger-bars {
+  display: block;
+  width: 20px;
+  height: 14px; /* space for three 2px lines with gaps */
+  background: linear-gradient(
+    to bottom,
+    currentColor 0 2px,
+    /* top line */ transparent 2px 6px,
+    /* gap */ currentColor 6px 8px,
+    /* middle line */ transparent 8px 12px,
+    /* gap */ currentColor 12px 14px /* bottom line */
+  );
+  background-repeat: no-repeat;
+  border-radius: 2px;
+}
+
+/* Hide any leftover Lucide SVG if present */
+.app-header .hamburger svg {
+  display: none !important;
 }
 
 /* ========== Content Area (scrolls) ========== */
@@ -99,7 +162,7 @@ button {
   padding-bottom: calc(var(--nav-h) + env(safe-area-inset-bottom, 0px));
 }
 
-/* Cards/sections used on Home page */
+/* Cards/sections */
 .card {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -108,7 +171,6 @@ button {
   padding: 16px;
   margin-bottom: 16px;
 }
-
 .card h3 {
   margin: 0 0 12px 0;
 }
@@ -162,7 +224,7 @@ button {
   right: 0;
   bottom: calc(
     var(--nav-h) + env(safe-area-inset-bottom, 0px)
-  ); /* sit above bottom nav */
+  ); /* above bottom nav */
   height: var(--action-h);
   display: flex;
   gap: 12px;
@@ -186,7 +248,6 @@ button {
   padding-bottom: env(safe-area-inset-bottom, 0px);
   z-index: 1002;
 }
-
 .bottom-nav .nav-inner {
   max-width: 720px;
   height: 100%;
@@ -194,7 +255,6 @@ button {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
 }
-
 .nav-item {
   display: flex;
   flex-direction: column;
@@ -205,13 +265,11 @@ button {
   color: var(--nav-inactive);
   font-size: 12px;
 }
-
 .nav-item svg {
   width: 22px;
   height: 22px;
   stroke: var(--nav-inactive);
 }
-
 .nav-item.active {
   color: var(--nav-active);
 }
@@ -219,14 +277,13 @@ button {
   stroke: var(--nav-active);
 }
 
-/* ========== Buttons (existing styles) ========== */
+/* ========== Buttons ========== */
 button {
   padding: 10px 20px;
   border-radius: 8px;
   cursor: pointer;
   border: none;
 }
-
 .btn-primary {
   background-color: #2ecc71;
   color: white;
@@ -236,10 +293,7 @@ button {
 .btn-primary:hover,
 .btn-primary:active {
   background-color: #27ae60;
-  width: 144px;
-  height: 44px;
 }
-
 .btn-secondary {
   background-color: transparent;
   border: 2px solid #2ecc71;
@@ -252,10 +306,7 @@ button {
   background-color: #27ae60;
   border-color: #27ae60;
   color: white;
-  width: 144px;
-  height: 44px;
 }
-
 .btn-tertiary {
   background-color: black;
   color: white;
@@ -264,7 +315,6 @@ button {
 .btn-tertiary:active {
   background-color: #333;
 }
-
 .btn-quaternary {
   background-color: #0d6efd;
   color: white;
@@ -287,7 +337,7 @@ button {
   margin-top: 20px;
 }
 
-/* Copy Button for Deliveries */
+/* Copy Button for Deliveries (icon-only) */
 .btn-copyMessage {
   background-color: lightgreen;
   border: none;
@@ -297,11 +347,6 @@ button {
   align-items: center;
   justify-content: center;
   padding: 8px;
-}
-
-.btn-copyMessage.icon-only i {
-  width: 20px;
-  height: 20px;
 }
 
 /* ========== Toast ========== */
@@ -326,7 +371,7 @@ button {
   animation: fadein 0.5s, fadeout 0.5s 2.5s;
 }
 
-/* ========== Slide-up Sheets (existing) ========== */
+/* ========== Slide-up Sheets ========== */
 .slide-up {
   position: fixed;
   bottom: 0;
@@ -374,29 +419,23 @@ button {
   margin: 14px 0;
 }
 
-/* Earnings rows: label left, value right */
+/* Totals on earnings page: label left, value right */
 #earningsTotals .earnings-row {
   display: flex;
   align-items: baseline;
   justify-content: space-between;
   margin: 10px 0;
 }
-
-/* Right column (number) */
 #earningsTotals .amount {
   margin-left: 16px; /* gap from label */
   min-width: 84px; /* keeps column aligned */
   text-align: right;
-  font-variant-numeric: tabular-nums; /* nicer alignment */
+  font-variant-numeric: tabular-nums;
 }
-
-/* Prepend $ to all amounts via CSS */
 #earningsTotals .amount::before {
   content: "$";
   margin-right: 4px;
 }
-
-/* Slight emphasis for grand total */
 #earningsTotals .amount.grand {
   font-weight: 600;
 }
@@ -434,7 +473,7 @@ button {
   margin-left: 10px;
 }
 
-/* ========== Existing deliveries UI (kept for index.html) ========== */
+/* ========== Deliveries UI (tiles) ========== */
 table {
   border-collapse: collapse;
   width: 100%;
@@ -516,7 +555,7 @@ th {
   margin-right: 0;
 }
 
-/* Animations */
+/* ========== Animations ========== */
 @keyframes fadein {
   from {
     bottom: 20px;
