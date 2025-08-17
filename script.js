@@ -66,6 +66,7 @@ function saveState() {
     odometerStart: prev.odometerStart || "",
     odometerEnd: prev.odometerEnd || "",
   };
+
   // Update start/end if present on page
   const startEl = document.getElementById("startTime");
   const endEl = document.getElementById("endTime");
@@ -75,6 +76,7 @@ function saveState() {
   if (endEl && endEl.textContent.trim() !== "") {
     state.endTime = endEl.textContent.trim();
   }
+
   // Update odometers if present on page (Home)
   const odoStartEl = document.getElementById("odoStart");
   const odoEndEl = document.getElementById("odoEnd");
@@ -85,24 +87,28 @@ function saveState() {
     state.odometerEnd = odoEndEl.value.trim();
   }
 
-  // Rebuild meals array from whatever tiles are present (supports split groups)
-  state.meals = [];
-  document.querySelectorAll(".checkbox-row").forEach((row) => {
-    const checkbox = row.querySelector(".task-checkbox");
-    const label = checkbox.dataset.label;
-    const timestamp = row.querySelector(".timestamp").textContent;
-    const delivered = row.dataset.delivered || "";
-    const duration = row.dataset.duration || "";
-    state.meals.push({
-      label,
-      checked: checkbox.checked,
-      timestamp,
-      delivered,
-      duration,
+  // ✅ Only rebuild meals array if we're on Deliveries (i.e., tiles exist)
+  const rows = document.querySelectorAll(".checkbox-row");
+  if (rows.length > 0) {
+    const nextMeals = [];
+    rows.forEach((row) => {
+      const checkbox = row.querySelector(".task-checkbox");
+      const label = checkbox?.dataset.label || "";
+      const timestamp = row.querySelector(".timestamp")?.textContent || "";
+      const delivered = row.dataset.delivered || "";
+      const duration = row.dataset.duration || "";
+      nextMeals.push({
+        label,
+        checked: !!checkbox?.checked,
+        timestamp,
+        delivered,
+        duration,
+      });
     });
-  });
+    state.meals = nextMeals;
+  }
+  // else: keep previous meals as-is to avoid wiping when not on Deliveries
 
-  // Persist
   localStorage.setItem("deliveryAppState", JSON.stringify(state));
 }
 
