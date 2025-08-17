@@ -23,12 +23,17 @@
       <div class="title">EarnRoute</div>
     </header>
 
-    <!-- Scrollable Content (no action bar flag off because we show our own +Add/Reset bar) -->
+    <!-- Scrollable Content (kept same overall structure) -->
     <main class="content">
       <h2 style="margin: 0 0 12px 0">Deliveries</h2>
 
-      <!-- Meal tiles -->
-      <div id="checkboxGroup" class="checkbox-group"></div>
+      <!-- ACTIVE group -->
+      <h2 class="group-title">Active</h2>
+      <div id="checkboxGroupActive" class="checkbox-group"></div>
+
+      <!-- COMPLETED group -->
+      <h2 class="group-title" style="margin-top: 18px">Completed</h2>
+      <div id="checkboxGroupCompleted" class="checkbox-group"></div>
 
       <!-- Slide-up: Meal details -->
       <div id="slideUpSheet" class="slide-up hidden">

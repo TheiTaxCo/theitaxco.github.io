@@ -84,25 +84,24 @@ function saveState() {
   if (odoEndEl && odoEndEl.value.trim() !== "") {
     state.odometerEnd = odoEndEl.value.trim();
   }
-  // Only rebuild the meals array on the Deliveries page (where the list exists)
-  const hasDeliveriesList = !!document.getElementById("checkboxGroup");
-  if (hasDeliveriesList) {
-    state.meals = [];
-    document.querySelectorAll(".checkbox-row").forEach((row) => {
-      const checkbox = row.querySelector(".task-checkbox");
-      const label = checkbox.dataset.label;
-      const timestamp = row.querySelector(".timestamp").textContent;
-      const delivered = row.dataset.delivered || "";
-      const duration = row.dataset.duration || "";
-      state.meals.push({
-        label,
-        checked: checkbox.checked,
-        timestamp,
-        delivered,
-        duration,
-      });
+
+  // Rebuild meals array from whatever tiles are present (supports split groups)
+  state.meals = [];
+  document.querySelectorAll(".checkbox-row").forEach((row) => {
+    const checkbox = row.querySelector(".task-checkbox");
+    const label = checkbox.dataset.label;
+    const timestamp = row.querySelector(".timestamp").textContent;
+    const delivered = row.dataset.delivered || "";
+    const duration = row.dataset.duration || "";
+    state.meals.push({
+      label,
+      checked: checkbox.checked,
+      timestamp,
+      delivered,
+      duration,
     });
-  }
+  });
+
   // Persist
   localStorage.setItem("deliveryAppState", JSON.stringify(state));
 }
@@ -111,18 +110,49 @@ function loadState() {
   const saved = JSON.parse(localStorage.getItem("deliveryAppState") || "{}");
   if (!saved.meals) saved.meals = [];
 
-  // Deliveries page (deliveries.html)
-  if (document.getElementById("checkboxGroup")) {
-    const group = document.getElementById("checkboxGroup");
-    group.innerHTML = "";
+  const active = document.getElementById("checkboxGroupActive");
+  const completed = document.getElementById("checkboxGroupCompleted");
+  const single = document.getElementById("checkboxGroup");
+
+  // If the split groups are present (deliveries.html after enhancement)
+  if (active || completed) {
+    if (active) active.innerHTML = "";
+    if (completed) completed.innerHTML = "";
+    if (saved.meals.length) {
+      saved.meals.forEach((m) => {
+        const target =
+          m.delivered && m.delivered.trim() !== "" ? completed : active;
+        addMeal(
+          m.label,
+          m.checked,
+          m.timestamp,
+          m.delivered,
+          m.duration,
+          target
+        );
+      });
+    } else if (active) {
+      addMeal("1st Meal", false, "", "", "", active);
+    }
+    ensureCopyButton(); // one Copy button under last ACTIVE tile
+  } else if (single) {
+    // Fallback: legacy single list (kept intact)
+    single.innerHTML = "";
     if (saved.meals.length) {
       saved.meals.forEach((m) =>
-        addMeal(m.label, m.checked, m.timestamp, m.delivered, m.duration)
+        addMeal(
+          m.label,
+          m.checked,
+          m.timestamp,
+          m.delivered,
+          m.duration,
+          single
+        )
       );
     } else {
-      addMeal("1st Meal");
+      addMeal("1st Meal", false, "", "", "", single);
     }
-    ensureCopyButton(); // single Copy Message button at bottom
+    ensureCopyButton();
   }
 
   // Earnings (labels)
@@ -131,16 +161,13 @@ function loadState() {
   }
 }
 
-// Optional: customize the base message via localStorage.setItem('copyBaseMessage', '...').
-// Falls back to your original phrase if not set.
+// Optional message customization; falls back to your original text.
 function getCopyBaseMessage() {
   return (
     localStorage.getItem("copyBaseMessage") ||
     "Thank you for your support and generous tip!  It goes a long way for my family."
   );
 }
-// copyText1() creates a personalized thank-you message based on the current time of day
-// (morning, afternoon, evening) and copies it to the clipboard.
 function copyText1() {
   const base = getCopyBaseMessage();
   const hour = new Date().getHours();
@@ -162,11 +189,12 @@ function copyText1() {
   });
 }
 
-// ensureCopyButton() places the single "Copy Message" button below the most recent meal tile,
-// always using copyText1() for its message, and preserves existing UI styling & Lucide icon.
+/* ---------- SINGLE Copy Message button (shown once under last ACTIVE tile) ---------- */
 function ensureCopyButton() {
-  const group = document.getElementById("checkboxGroup");
-  if (!group) return;
+  const activeGroup =
+    document.getElementById("checkboxGroupActive") ||
+    document.getElementById("checkboxGroup");
+  if (!activeGroup) return;
 
   let container = document.getElementById("copyMessageContainer");
   if (!container) {
@@ -176,19 +204,19 @@ function ensureCopyButton() {
 
     const btn = document.createElement("button");
     btn.id = "copyMessageBtn";
-    btn.className = "btn-copyMessage"; // keep your existing styling
+    btn.className = "btn-copyMessage";
     btn.innerHTML = `<i data-lucide="copy"></i>`;
-    btn.onclick = copyText1; // ← no fallback; always copy greeting
+    btn.onclick = copyText1;
 
     container.appendChild(btn);
   } else {
-    // If it exists, move it to the end (under the most recent tile)
+    // move it to the end of ACTIVE group
     container.remove();
   }
 
-  group.appendChild(container);
+  activeGroup.appendChild(container);
 
-  // Ensure the icon renders after DOM insert
+  // Refresh icon
   if (window.lucide && typeof window.lucide.createIcons === "function") {
     window.lucide.createIcons();
   }
@@ -200,12 +228,21 @@ function addMeal(
   isChecked = false,
   timestampValue = "",
   deliveredValue = "",
-  durationValue = ""
+  durationValue = "",
+  targetGroupEl = null
 ) {
-  const count = document.querySelectorAll(".checkbox-row").length;
-  if (count >= MAX_MEALS) return;
+  const totalRows = document.querySelectorAll(".checkbox-row").length;
+  if (totalRows >= MAX_MEALS) return;
 
-  const group = document.getElementById("checkboxGroup");
+  // Decide which container to use
+  const activeSplit = document.getElementById("checkboxGroupActive");
+  const completedSplit = document.getElementById("checkboxGroupCompleted");
+  let group =
+    targetGroupEl ||
+    document.getElementById("checkboxGroup") ||
+    (deliveredValue ? completedSplit : activeSplit);
+  if (!group) return;
+
   const row = document.createElement("div");
   row.className = "checkbox-row";
 
@@ -216,7 +253,8 @@ function addMeal(
   checkbox.type = "checkbox";
   checkbox.className = "task-checkbox";
 
-  const mealLabel = label || `${count + 1}${ordinalSuffix(count + 1)} Meal`;
+  const mealLabel =
+    label || `${totalRows + 1}${ordinalSuffix(totalRows + 1)} Meal`;
   checkbox.dataset.label = mealLabel;
   checkbox.checked = isChecked;
   checkbox.disabled = !!deliveredValue;
@@ -233,10 +271,11 @@ function addMeal(
   removeBtn.className = "remove-btn";
   removeBtn.innerHTML = "&times;";
   removeBtn.style.display =
-    count > 0 && !isChecked && !timestampValue ? "inline" : "none";
+    totalRows > 0 && !isChecked && !timestampValue ? "inline" : "none";
   removeBtn.onclick = () => {
-    group.removeChild(row);
-    ensureCopyButton(); // keep the single Copy button at bottom
+    const parent = row.parentElement;
+    parent.removeChild(row);
+    ensureCopyButton();
     saveState();
   };
 
@@ -283,7 +322,8 @@ function addMeal(
   });
 
   function updateIcons() {
-    const showRemove = !checkbox.checked && !timestamp.textContent && count > 0;
+    const showRemove =
+      !checkbox.checked && !timestamp.textContent && totalRows > 0;
     const showArrow = checkbox.checked;
     removeBtn.style.display = showRemove ? "inline" : "none";
     arrowBtn.style.display = showArrow ? "inline" : "none";
@@ -299,9 +339,7 @@ function addMeal(
   row.appendChild(arrowBtn);
   group.appendChild(row);
 
-  // Ensure a single, global Copy button appears once at the end
   ensureCopyButton();
-
   saveState();
 }
 
@@ -327,12 +365,12 @@ function resetAll() {
   if (active || completed) {
     if (active) active.innerHTML = "";
     if (completed) completed.innerHTML = "";
-    addMeal("1st Meal");
-    if (typeof ensureCopyButton === "function") ensureCopyButton();
+    addMeal("1st Meal", false, "", "", "", active);
+    ensureCopyButton();
   } else if (single) {
     single.innerHTML = "";
-    addMeal("1st Meal");
-    if (typeof ensureCopyButton === "function") ensureCopyButton();
+    addMeal("1st Meal", false, "", "", "", single);
+    ensureCopyButton();
   }
 
   // 3) Reset Earnings UI (totals section)
@@ -343,23 +381,19 @@ function resetAll() {
   if (ue) ue.textContent = "0.00";
   if (grand) grand.textContent = "0.00";
 
-  // 4) Reset Earnings slide-up inputs & computed labels (if sheet is present)
+  // 4) Reset Earnings computed labels (if present)
+  ["totalEarningsGrubhub", "totalEarningsUber", "grandTotalEarnings"].forEach(
+    (id) => {
+      const el = document.getElementById(id);
+      if (el) el.textContent = "Pending";
+    }
+  );
 
-  const computedLabels = [
-    "totalEarningsGrubhub",
-    "totalEarningsUber",
-    "grandTotalEarnings",
-  ];
-  computedLabels.forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.textContent = "Pending";
-  });
-
-  // 5) Refresh Home pills (if on Home)
+  // 5) Refresh Home pill (if on Home)
   const earningsPill = document.getElementById("earningsPill");
   if (earningsPill) earningsPill.textContent = "Total Earnings: $0.00";
 
-  // 6) Persist fresh state (adds back 1st Meal etc.)
+  // 6) Persist fresh state
   saveState();
 }
 
@@ -456,15 +490,13 @@ function refreshEarningsLabels() {
       saved.grandTotal ?? "0.00";
 }
 
-/* ---------- Odometer field caret jump to end helpers ---------- */
+/* ---------- Odometer caret helper ---------- */
 function moveCaretToEnd(el) {
   if (!el) return;
   const len = (el.value || "").length;
-  // Try the standard way
   try {
     el.setSelectionRange(len, len);
   } catch (_) {
-    // Fallback for number inputs in some browsers
     const v = el.value;
     el.value = "";
     el.value = v;
@@ -478,7 +510,7 @@ function initIcons() {
   }
 }
 
-/* ---------- Export ---------- */
+/* ---------- Export (More) ---------- */
 function exportToJson() {
   const deliveryAppState = JSON.parse(
     localStorage.getItem("deliveryAppState") || "{}"
@@ -507,7 +539,6 @@ function exportToJson() {
   URL.revokeObjectURL(a.href);
   a.remove();
 
-  // optional toast
   if (typeof showToast === "function") showToast("Exported data as JSON");
 }
 
@@ -524,10 +555,9 @@ function setActiveNav() {
 /* ---------- DOM Ready ---------- */
 window.addEventListener("DOMContentLoaded", () => {
   initIcons();
-  // --- force the header icon to render if missed ---
   const hdr = document.querySelector('.app-header [data-lucide="menu"]');
   if (hdr && window.lucide && typeof window.lucide.createIcons === "function") {
-    window.lucide.createIcons(); // re-scan; cheap and safe
+    window.lucide.createIcons();
   }
 
   loadState();
@@ -682,21 +712,27 @@ window.addEventListener("DOMContentLoaded", () => {
         deliveredStr;
       document.getElementById("durationInSheet").textContent = durationStr;
 
-      // Lock button for this tile
+      // Persist on the tile
+      const row = activeMealElements.row;
+      row.dataset.delivered = deliveredStr;
+      row.dataset.duration = durationStr;
+
+      // Lock checkbox & delivered button
+      activeMealElements.checkbox.disabled = true;
       deliveredBtn.disabled = true;
 
-      // Persist on the tile
-      activeMealElements.row.dataset.delivered = deliveredStr;
-      activeMealElements.row.dataset.duration = durationStr;
-      activeMealElements.checkbox.disabled = true;
+      // Move tile to COMPLETED if present
+      const completed = document.getElementById("checkboxGroupCompleted");
+      if (completed && row.parentElement !== completed) {
+        completed.appendChild(row);
+      }
 
-      // Save state
+      // Keep Copy button under the last ACTIVE tile
+      ensureCopyButton();
+
+      // Save and close
       saveState();
-
-      // ✅ Close the slide-up after saving
       document.getElementById("slideUpSheet").classList.add("hidden");
-
-      // Clean up reference
       activeMealElements = null;
     };
 
