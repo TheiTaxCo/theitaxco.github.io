@@ -489,6 +489,7 @@ th {
   justify-content: space-between;
   background-color: #fff;
   padding: 16px 20px;
+  border: #00b06b;
   border-radius: 14px;
   box-shadow: var(--shadow);
   margin-bottom: 12px;

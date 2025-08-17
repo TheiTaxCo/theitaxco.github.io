@@ -124,23 +124,53 @@ function loadState() {
   if (active || completed) {
     if (active) active.innerHTML = "";
     if (completed) completed.innerHTML = "";
+
     if (saved.meals.length) {
+      // Split into Active vs Completed
+      const activeMeals = [];
+      const completedMeals = [];
       saved.meals.forEach((m) => {
-        const target =
-          m.delivered && m.delivered.trim() !== "" ? completed : active;
+        if (m.delivered && m.delivered.trim() !== "") {
+          completedMeals.push(m);
+        } else {
+          activeMeals.push(m);
+        }
+      });
+
+      // ✅ Sort completed by ACCEPTED timestamp (oldest first)
+      completedMeals.sort((a, b) => {
+        const dateA = new Date(a.timestamp || 0);
+        const dateB = new Date(b.timestamp || 0);
+        return dateA - dateB; // oldest first
+      });
+
+      // Render in order
+      activeMeals.forEach((m) =>
         addMeal(
           m.label,
           m.checked,
           m.timestamp,
           m.delivered,
           m.duration,
-          target
-        );
-      });
+          active
+        )
+      );
+      completedMeals.forEach((m) =>
+        addMeal(
+          m.label,
+          m.checked,
+          m.timestamp,
+          m.delivered,
+          m.duration,
+          completed
+        )
+      );
     } else if (active) {
       addMeal("1st Meal", false, "", "", "", active);
     }
-    ensureCopyButton(); // one Copy button under last ACTIVE tile
+
+    // Keep the Copy button under the last ACTIVE tile
+    ensureCopyButton();
   } else if (single) {
     // Fallback: legacy single list (kept intact)
     single.innerHTML = "";
@@ -706,10 +736,9 @@ window.addEventListener("DOMContentLoaded", () => {
 
       const deliveredNow = new Date();
       const deliveredStr = deliveredNow.toLocaleString();
-      const acceptedStr = activeMealElements.timestamp.textContent.replace(
-        "Accepted on: ",
-        ""
-      );
+      const acceptedStr = activeMealElements.timestamp.textContent
+        .replace("Accepted on: ", "")
+        .trim();
       const acceptedDate = new Date(acceptedStr);
       const durationStr = formatDuration(acceptedDate, deliveredNow);
 
@@ -727,13 +756,41 @@ window.addEventListener("DOMContentLoaded", () => {
       activeMealElements.checkbox.disabled = true;
       deliveredBtn.disabled = true;
 
-      // Move tile to COMPLETED if present
+      // ✅ Move tile to COMPLETED in accepted-time order (oldest first)
       const completed = document.getElementById("checkboxGroupCompleted");
-      if (completed && row.parentElement !== completed) {
-        completed.appendChild(row);
+      if (completed) {
+        // Remove from its current parent if needed (Active)
+        if (row.parentElement !== completed) {
+          // Find insert position among existing completed rows
+          const accTime = new Date(acceptedStr).getTime();
+          const thisTime = isNaN(accTime) ? Number.POSITIVE_INFINITY : accTime;
+
+          const completedRows = Array.from(
+            completed.querySelectorAll(".checkbox-row")
+          );
+
+          let insertBeforeNode = null;
+          for (const r of completedRows) {
+            const rAcceptedRaw =
+              r
+                .querySelector(".timestamp")
+                ?.textContent.replace("Accepted on: ", "")
+                .trim() || "";
+            const rTime = new Date(rAcceptedRaw).getTime();
+            const rAcceptedTime = isNaN(rTime)
+              ? Number.POSITIVE_INFINITY
+              : rTime;
+            if (thisTime < rAcceptedTime) {
+              insertBeforeNode = r;
+              break;
+            }
+          }
+
+          completed.insertBefore(row, insertBeforeNode);
+        }
       }
 
-      // Keep Copy button under the last ACTIVE tile
+      // Keep the Copy button under the last ACTIVE tile
       ensureCopyButton();
 
       // Save and close
