@@ -41,12 +41,38 @@
           <h2 id="mealLabelInSheet"></h2>
           <button id="closeSheetBtn">&times;</button>
         </div>
+
         <p><strong>Accepted:</strong> <span id="acceptedTimeInSheet"></span></p>
         <p>
           <strong>Delivered:</strong> <span id="deliveredTimeInSheet"></span>
         </p>
         <p><strong>Duration:</strong> <span id="durationInSheet"></span></p>
-        <button class="btn-delivered" id="markDeliveredBtn">Delivered</button>
+
+        <!-- NEW: Courier chooser (must pick one before Delivered) -->
+        <div class="courier-chooser">
+          <button
+            id="btnCourierGH"
+            class="courier-btn courier-gh"
+            aria-pressed="false"
+            type="button"
+            title="Grubhub"
+          >
+            <i data-lucide="soup"></i>
+          </button>
+          <button
+            id="btnCourierUE"
+            class="courier-btn courier-ue"
+            aria-pressed="false"
+            type="button"
+            title="Uber Eats"
+          >
+            <i data-lucide="hamburger"></i>
+          </button>
+        </div>
+
+        <button class="btn-delivered" id="markDeliveredBtn" disabled>
+          Delivered
+        </button>
       </div>
 
       <!-- Toast (re-used by copy message) -->
@@ -76,5 +102,8 @@
         </a>
       </div>
     </nav>
+
+    <!-- One global backdrop per page -->
+    <div id="modalBackdrop" class="backdrop"></div>
   </body>
 </html>

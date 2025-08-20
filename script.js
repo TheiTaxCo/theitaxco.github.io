@@ -6,7 +6,23 @@ function formatNow() {
   return new Date().toLocaleString();
 }
 
-// Attach caret-to-end behavior on focus for Earnings inputs
+/* ---------- Sheet controls (no backdrop-to-close) ---------- */
+function openSheet(sheetEl) {
+  if (!sheetEl) return;
+  const backdrop = document.getElementById("modalBackdrop");
+  sheetEl.classList.remove("hidden");
+  document.body.classList.add("modal-open");
+  if (backdrop) backdrop.classList.add("show");
+}
+function closeSheet(sheetEl) {
+  if (!sheetEl) return;
+  const backdrop = document.getElementById("modalBackdrop");
+  sheetEl.classList.add("hidden");
+  document.body.classList.remove("modal-open");
+  if (backdrop) backdrop.classList.remove("show");
+}
+
+/* ---------- Earnings caret handlers ---------- */
 function attachEarningsCaretHandlers() {
   const earningsInputs = [
     "deliveryPayGrubhub",
@@ -18,7 +34,7 @@ function attachEarningsCaretHandlers() {
   ];
   earningsInputs.forEach((id) => {
     const el = document.getElementById(id);
-    if (!el || el.dataset.caretBound === "1") return; // avoid double-binding
+    if (!el || el.dataset.caretBound === "1") return;
     el.addEventListener("focus", () => {
       setTimeout(() => moveCaretToEnd(el), 0);
     });
@@ -97,12 +113,14 @@ function saveState() {
       const timestamp = row.querySelector(".timestamp")?.textContent || "";
       const delivered = row.dataset.delivered || "";
       const duration = row.dataset.duration || "";
+      const courierName = row.dataset.courier || ""; // NEW
       nextMeals.push({
         label,
         checked: !!checkbox?.checked,
         timestamp,
         delivered,
         duration,
+        courierName, // NEW: persist courier
       });
     });
     state.meals = nextMeals;
@@ -120,13 +138,11 @@ function loadState() {
   const completed = document.getElementById("checkboxGroupCompleted");
   const single = document.getElementById("checkboxGroup");
 
-  // If the split groups are present (deliveries.html after enhancement)
   if (active || completed) {
     if (active) active.innerHTML = "";
     if (completed) completed.innerHTML = "";
 
     if (saved.meals.length) {
-      // Split into Active vs Completed
       const activeMeals = [];
       const completedMeals = [];
       saved.meals.forEach((m) => {
@@ -137,14 +153,13 @@ function loadState() {
         }
       });
 
-      // ✅ Sort completed by ACCEPTED timestamp (oldest first)
+      // Sort completed by ACCEPTED timestamp (oldest first)
       completedMeals.sort((a, b) => {
         const dateA = new Date(a.timestamp || 0);
         const dateB = new Date(b.timestamp || 0);
-        return dateA - dateB; // oldest first
+        return dateA - dateB;
       });
 
-      // Render in order
       activeMeals.forEach((m) =>
         addMeal(
           m.label,
@@ -152,7 +167,8 @@ function loadState() {
           m.timestamp,
           m.delivered,
           m.duration,
-          active
+          active,
+          m.courierName || ""
         )
       );
       completedMeals.forEach((m) =>
@@ -162,17 +178,16 @@ function loadState() {
           m.timestamp,
           m.delivered,
           m.duration,
-          completed
+          completed,
+          m.courierName || ""
         )
       );
     } else if (active) {
-      addMeal("1st Meal", false, "", "", "", active);
+      addMeal("1st Meal", false, "", "", "", active, "");
     }
 
-    // Keep the Copy button under the last ACTIVE tile
     ensureCopyButton();
   } else if (single) {
-    // Fallback: legacy single list (kept intact)
     single.innerHTML = "";
     if (saved.meals.length) {
       saved.meals.forEach((m) =>
@@ -182,11 +197,12 @@ function loadState() {
           m.timestamp,
           m.delivered,
           m.duration,
-          single
+          single,
+          m.courierName || ""
         )
       );
     } else {
-      addMeal("1st Meal", false, "", "", "", single);
+      addMeal("1st Meal", false, "", "", "", single, "");
     }
     ensureCopyButton();
   }
@@ -197,7 +213,7 @@ function loadState() {
   }
 }
 
-// Optional message customization; falls back to your original text.
+/* ---------- Copy message (time-of-day greeting) ---------- */
 function getCopyBaseMessage() {
   return (
     localStorage.getItem("copyBaseMessage") ||
@@ -225,7 +241,7 @@ function copyText1() {
   });
 }
 
-/* ---------- SINGLE Copy Message button (shown once under last ACTIVE tile) ---------- */
+/* ---------- SINGLE Copy Message button (once under last ACTIVE tile) ---------- */
 function ensureCopyButton() {
   const activeGroup =
     document.getElementById("checkboxGroupActive") ||
@@ -265,12 +281,12 @@ function addMeal(
   timestampValue = "",
   deliveredValue = "",
   durationValue = "",
-  targetGroupEl = null
+  targetGroupEl = null,
+  courierNameValue = "" // NEW
 ) {
   const totalRows = document.querySelectorAll(".checkbox-row").length;
   if (totalRows >= MAX_MEALS) return;
 
-  // Decide which container to use
   const activeSplit = document.getElementById("checkboxGroupActive");
   const completedSplit = document.getElementById("checkboxGroupCompleted");
   let group =
@@ -332,7 +348,8 @@ function addMeal(
       duration = formatDuration(acceptedDate, new Date());
     }
 
-    document.getElementById("slideUpSheet").classList.remove("hidden");
+    // OPEN deliveries sheet with backdrop
+    openSheet(document.getElementById("slideUpSheet"));
     document.getElementById("mealLabelInSheet").textContent = mealLabel;
     document.getElementById("acceptedTimeInSheet").textContent =
       timestamp.textContent || "Pending";
@@ -341,13 +358,48 @@ function addMeal(
     document.getElementById("durationInSheet").textContent = duration;
 
     const markBtn = document.getElementById("markDeliveredBtn");
-    markBtn.disabled = !!row.dataset.delivered;
+    const ghBtn = document.getElementById("btnCourierGH");
+    const ueBtn = document.getElementById("btnCourierUE");
+
+    // Helper to update selected visual state
+    function updateCourierUI(name) {
+      const ghSelected = name === "grubHub";
+      const ueSelected = name === "uberEats";
+      ghBtn.classList.toggle("selected", ghSelected);
+      ueBtn.classList.toggle("selected", ueSelected);
+      ghBtn.setAttribute("aria-pressed", ghSelected ? "true" : "false");
+      ueBtn.setAttribute("aria-pressed", ueSelected ? "true" : "false");
+    }
+
+    // Init state from dataset
+    const currentCourier = row.dataset.courier || "";
+    updateCourierUI(currentCourier);
+
+    // Enable Delivered iff a courier is picked and not already delivered
+    markBtn.disabled = !!row.dataset.delivered || !currentCourier;
+
+    // Disable courier controls if already delivered
+    const deliveredAlready = !!row.dataset.delivered;
+    ghBtn.disabled = deliveredAlready;
+    ueBtn.disabled = deliveredAlready;
+
+    // Click handlers (no-op if delivered)
+    function selectCourier(name) {
+      if (deliveredAlready) return;
+      row.dataset.courier = name;
+      updateCourierUI(name);
+      markBtn.disabled = false; // enable Delivered
+      saveState();
+    }
+    ghBtn.onclick = () => selectCourier("grubHub");
+    ueBtn.onclick = () => selectCourier("uberEats");
 
     activeMealElements = { row, timestamp, arrowBtn, checkbox };
   };
 
   if (deliveredValue) row.dataset.delivered = deliveredValue;
   if (durationValue) row.dataset.duration = durationValue;
+  if (courierNameValue) row.dataset.courier = courierNameValue; // NEW restore
 
   checkbox.addEventListener("click", () => {
     timestamp.textContent = checkbox.checked
@@ -401,11 +453,11 @@ function resetAll() {
   if (active || completed) {
     if (active) active.innerHTML = "";
     if (completed) completed.innerHTML = "";
-    addMeal("1st Meal", false, "", "", "", active);
+    addMeal("1st Meal", false, "", "", "", active, "");
     ensureCopyButton();
   } else if (single) {
     single.innerHTML = "";
-    addMeal("1st Meal", false, "", "", "", single);
+    addMeal("1st Meal", false, "", "", "", single, "");
     ensureCopyButton();
   }
 
@@ -441,7 +493,7 @@ function initHomePage() {
   const earningsPill = document.getElementById("earningsPill");
   const mileagePill = document.getElementById("mileagePill");
   const durationPill = document.getElementById("durationPill");
-  if (!deliveriesPill || !earningsPill || !mileagePill || !durationPill) return; // not on home
+  if (!deliveriesPill || !earningsPill || !mileagePill || !durationPill) return;
 
   const state = JSON.parse(localStorage.getItem("deliveryAppState") || "{}");
   const meals = Array.isArray(state.meals) ? state.meals : [];
@@ -590,6 +642,7 @@ function setActiveNav() {
 
 /* ---------- DOM Ready ---------- */
 window.addEventListener("DOMContentLoaded", () => {
+  // Icons (header + bottom nav)
   initIcons();
   const hdr = document.querySelector('.app-header [data-lucide="menu"]');
   if (hdr && window.lucide && typeof window.lucide.createIcons === "function") {
@@ -630,10 +683,10 @@ window.addEventListener("DOMContentLoaded", () => {
   // Slide-up close buttons (if on page)
   if (document.getElementById("closeSheetBtn"))
     document.getElementById("closeSheetBtn").onclick = () =>
-      document.getElementById("slideUpSheet").classList.add("hidden");
+      closeSheet(document.getElementById("slideUpSheet"));
   if (document.getElementById("closeEarningsBtn"))
     document.getElementById("closeEarningsBtn").onclick = () =>
-      document.getElementById("earningsSheet").classList.add("hidden");
+      closeSheet(document.getElementById("earningsSheet"));
 
   // Earnings open button (on earnings.html)
   if (document.getElementById("openEarningsBtn")) {
@@ -667,8 +720,7 @@ window.addEventListener("DOMContentLoaded", () => {
         setText("grandTotalEarnings", saved.grandTotal);
       } catch (_) {}
       attachEarningsCaretHandlers();
-
-      document.getElementById("earningsSheet").classList.remove("hidden");
+      openSheet(document.getElementById("earningsSheet"));
     };
   }
 
@@ -719,7 +771,7 @@ window.addEventListener("DOMContentLoaded", () => {
         };
         localStorage.setItem("earningsSummary", JSON.stringify(earningsData));
 
-        document.getElementById("earningsSheet").classList.add("hidden");
+        closeSheet(document.getElementById("earningsSheet"));
         refreshEarningsLabels();
       });
   }
@@ -752,16 +804,18 @@ window.addEventListener("DOMContentLoaded", () => {
       row.dataset.delivered = deliveredStr;
       row.dataset.duration = durationStr;
 
-      // Lock checkbox & delivered button
+      // Lock checkbox & delivered button & courier buttons
       activeMealElements.checkbox.disabled = true;
       deliveredBtn.disabled = true;
+      const ghBtn = document.getElementById("btnCourierGH");
+      const ueBtn = document.getElementById("btnCourierUE");
+      if (ghBtn) ghBtn.disabled = true;
+      if (ueBtn) ueBtn.disabled = true;
 
-      // ✅ Move tile to COMPLETED in accepted-time order (oldest first)
+      // Move tile to COMPLETED in accepted-time order (oldest first)
       const completed = document.getElementById("checkboxGroupCompleted");
       if (completed) {
-        // Remove from its current parent if needed (Active)
         if (row.parentElement !== completed) {
-          // Find insert position among existing completed rows
           const accTime = new Date(acceptedStr).getTime();
           const thisTime = isNaN(accTime) ? Number.POSITIVE_INFINITY : accTime;
 
@@ -771,31 +825,26 @@ window.addEventListener("DOMContentLoaded", () => {
 
           let insertBeforeNode = null;
           for (const r of completedRows) {
-            const rAcceptedRaw =
-              r
-                .querySelector(".timestamp")
-                ?.textContent.replace("Accepted on: ", "")
-                .trim() || "";
+            const rAcceptedRaw = (
+              r.querySelector(".timestamp")?.textContent || ""
+            )
+              .replace("Accepted on: ", "")
+              .trim();
             const rTime = new Date(rAcceptedRaw).getTime();
-            const rAcceptedTime = isNaN(rTime)
-              ? Number.POSITIVE_INFINITY
-              : rTime;
-            if (thisTime < rAcceptedTime) {
+            const rComparable = isNaN(rTime) ? Number.POSITIVE_INFINITY : rTime;
+            if (thisTime < rComparable) {
               insertBeforeNode = r;
               break;
             }
           }
-
-          completed.insertBefore(row, insertBeforeNode);
+          if (insertBeforeNode) completed.insertBefore(row, insertBeforeNode);
+          else completed.appendChild(row);
         }
       }
 
-      // Keep the Copy button under the last ACTIVE tile
-      ensureCopyButton();
-
-      // Save and close
       saveState();
-      document.getElementById("slideUpSheet").classList.add("hidden");
+      closeSheet(document.getElementById("slideUpSheet"));
+
       activeMealElements = null;
     };
 
