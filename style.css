@@ -311,7 +311,7 @@ button {
 }
 
 .btn-delivered {
-  background-color: #0d6efd;
+  background-color: black;
   color: white;
   border: none;
   width: 385px;
@@ -558,6 +558,39 @@ th {
 }
 #earningsControls button {
   margin-right: 0;
+}
+
+/* ========== Courier chooser (Deliveries slide-up) ========== */
+
+.courier-btn:active {
+  transform: translateY(2px);
+}
+
+/* Grubhub - Brand colors */
+.courier-gh {
+  background: #ff6100;
+  color: white;
+}
+/* Uber Eats - Brand colors*/
+.courier-ue {
+  background: #035d1f;
+  color: white;
+}
+
+/* Selected visual state (mutually exclusive in JS) */
+.courier-btn.courier-gh.selected {
+  outline: 3px solid orange; /* orange for Grubhub */
+}
+.courier-btn.courier-ue.selected {
+  outline: 3px solid #00b06b; /* green for Uber Eats */
+}
+
+/* Disabled after delivery is recorded */
+.courier-btn[disabled] {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+  color: white;
 }
 
 /* ========== Animations ========== */
