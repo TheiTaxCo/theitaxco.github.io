@@ -322,7 +322,8 @@ button {
 
 /* Copy Button for Deliveries (icon-only) */
 .btn-copyMessage {
-  background-color: lightgreen;
+  background-color: lightgray;
+  color: black;
   border: none;
   width: 48px;
   height: 48px;
@@ -330,6 +331,8 @@ button {
   align-items: center;
   justify-content: center;
   padding: 8px;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.12), 0 1px 2px rgba(0, 0, 0, 0.24);
+  border-radius: 12px; /* optional: match tile roundness */
 }
 
 /* ========== Toast ========== */
@@ -497,6 +500,7 @@ th {
   width: 100%;
   margin-top: 12px;
 }
+
 .checkbox-row {
   display: flex;
   align-items: center;
@@ -509,6 +513,40 @@ th {
   margin-bottom: 12px;
   cursor: pointer;
   position: relative;
+}
+
+/* Make sure the tile itself has the radius you want */
+.checkbox-row {
+  position: relative;
+  border-left: none; /* don't use a real border for the stripe */
+  border-radius: 14px; /* <-- match your tile radius */
+}
+
+/* Left status stripe (straight inside edge, rounded outside edge) */
+.checkbox-row::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0; /* top:0; left:0; bottom:0 */
+  width: 8px; /* stripe thickness (adjust if you like) */
+
+  /* Round only the OUTSIDE (left) corners to match the tile */
+  border-top-left-radius: 14px; /* same value as .checkbox-row */
+  border-bottom-left-radius: 14px;
+  border-top-right-radius: 0; /* keep inside edge straight */
+  border-bottom-right-radius: 0;
+
+  background: transparent; /* default, overridden by states below */
+}
+
+/* Colors */
+.checkbox-row.active::before {
+  background: #2563eb; /* Active = blue */
+}
+.checkbox-row.completed.grubhub::before {
+  background: #ff6100; /* Completed (Grubhub) = orange */
+}
+.checkbox-row.completed.ubereats::before {
+  background: #035d1f; /* Completed (Uber Eats) = green */
 }
 .checkbox-left {
   display: flex;

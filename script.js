@@ -427,6 +427,9 @@ function addMeal(
   row.appendChild(arrowBtn);
   group.appendChild(row);
 
+  /* NEW: set border classes based on delivered/courier */
+  applyTileClasses(row);
+
   ensureCopyButton();
   saveState();
 }
@@ -438,6 +441,22 @@ function ordinalSuffix(i) {
   if (j == 2 && k != 12) return "nd";
   if (j == 3 && k != 13) return "rd";
   return "th";
+}
+
+/* ---------- Tile state → CSS classes (active/completed + courier) ---------- */
+function applyTileClasses(row) {
+  // clean slate
+  row.classList.remove("active", "completed", "grubhub", "ubereats");
+
+  const delivered = (row.dataset.delivered || "").trim();
+  if (delivered) {
+    row.classList.add("completed");
+    const c = (row.dataset.courier || "").toLowerCase();
+    if (c === "grubhub") row.classList.add("grubhub");
+    else if (c === "ubereats") row.classList.add("ubereats");
+  } else {
+    row.classList.add("active");
+  }
 }
 
 function resetAll() {
@@ -806,6 +825,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
       // Lock checkbox & delivered button & courier buttons
       activeMealElements.checkbox.disabled = true;
+      /* NEW: update tile classes to completed + courier color */
+      applyTileClasses(activeMealElements.row);
       deliveredBtn.disabled = true;
       const ghBtn = document.getElementById("btnCourierGH");
       const ueBtn = document.getElementById("btnCourierUE");
