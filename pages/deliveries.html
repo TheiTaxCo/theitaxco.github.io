@@ -7,12 +7,31 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Deliveries — EarnRoute</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../style.css" />
     <script
       defer
       src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
     ></script>
-    <script defer src="script.js"></script>
+    <!--Iconify Wev Component-->
+    <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+    <!--javascripts-->
+    <script defer src="../assets/js/script.js"></script>
+    <script type="module" src="../assets/js/config.supabase.js"></script>
+    <script type="module" src="../assets/js/auth.supabase.js"></script>
+    <script type="module">
+      import { logoutUser } from "../assets/js/auth.supabase.js";
+      window.__logoutUser = logoutUser;
+    </script>
+
+    <script type="module" src="../assets/js/db.supabase.js"></script>
+    <script type="module" src="../assets/js/sync.supabase.js"></script>
+    <script src="../assets/js/util.dom.js"></script>
+
+    <!-- ✅ Authentication gate -->
+    <script type="module">
+      import { requireAuthOrRedirect } from "../assets/js/auth.supabase.js";
+      requireAuthOrRedirect(); // kicks to login if not signed in
+    </script>
   </head>
   <body>
     <!-- Fixed Header -->
@@ -25,14 +44,14 @@
 
     <!-- Scrollable Content (kept same overall structure) -->
     <main class="content">
-      <h2 style="margin: 0 0 12px 0">Deliveries</h2>
+      <h2 style="margin: 0 0 12px 0; margin-bottom: 20px">Deliveries</h2>
 
       <!-- ACTIVE group -->
-      <h2 class="group-title">Active</h2>
+      <h2 class="group-title">ACTIVE</h2>
       <div id="checkboxGroupActive" class="checkbox-group"></div>
 
       <!-- COMPLETED group -->
-      <h2 class="group-title" style="margin-top: 18px">Completed</h2>
+      <h2 class="group-title" style="margin-top: 18px">COMPLETED</h2>
       <div id="checkboxGroupCompleted" class="checkbox-group"></div>
 
       <!-- Slide-up: Meal details -->
@@ -57,8 +76,12 @@
             type="button"
             title="Grubhub"
           >
-            <i data-lucide="soup"></i>
+            <iconify-icon
+              icon="simple-icons:grubhub"
+              aria-hidden="true"
+            ></iconify-icon>
           </button>
+          <!-- Uber Eats -->
           <button
             id="btnCourierUE"
             class="courier-btn courier-ue"
@@ -66,7 +89,11 @@
             type="button"
             title="Uber Eats"
           >
-            <i data-lucide="hamburger"></i>
+            <!-- No width/height attributes; CSS controls size -->
+            <iconify-icon
+              icon="simple-icons:ubereats"
+              aria-hidden="true"
+            ></iconify-icon>
           </button>
         </div>
 
@@ -105,5 +132,26 @@
 
     <!-- One global backdrop per page -->
     <div id="modalBackdrop" class="backdrop"></div>
+
+    <!-- Left slide-in drawer (copy from home.html) -->
+    <aside id="sideDrawer" class="drawer">
+      <div class="drawer-header">
+        <h3>George Moreno</h3>
+        <button id="closeDrawerBtn" class="drawer-close" aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      <div class="drawer-content">
+        <a href="home.html" class="drawer-link">Home</a>
+        <a href="deliveries.html" class="drawer-link">Deliveries</a>
+        <a href="earnings.html" class="drawer-link">Earnings</a>
+        <a href="more.html" class="drawer-link">More</a>
+
+        <hr class="drawer-sep" />
+        <button id="logoutBtn" class="drawer-logout">Logout</button>
+        <p style="text-align: center">Version: 3.0.0</p>
+      </div>
+    </aside>
   </body>
 </html>

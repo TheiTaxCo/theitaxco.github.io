@@ -7,12 +7,28 @@
       content="width=device-width, initial-scale=1.0, viewport-fit=cover"
     />
     <title>Earnings — EarnRoute</title>
-    <link rel="stylesheet" href="style.css" />
+    <link rel="stylesheet" href="../style.css" />
     <script
       defer
       src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
     ></script>
-    <script defer src="script.js"></script>
+    <script defer src="../assets/js/script.js"></script>
+    <script type="module" src="../assets/js/config.supabase.js"></script>
+    <script type="module" src="../assets/js/auth.supabase.js"></script>
+    <script type="module">
+      import { logoutUser } from "../assets/js/auth.supabase.js";
+      window.__logoutUser = logoutUser;
+    </script>
+
+    <script type="module" src="../assets/js/db.supabase.js"></script>
+    <script type="module" src="../assets/js/sync.supabase.js"></script>
+    <script src="../assets/js/util.dom.js"></script>
+
+    <!-- ✅ Authentication gate -->
+    <script type="module">
+      import { requireAuthOrRedirect } from "../assets/js/auth.supabase.js";
+      requireAuthOrRedirect(); // kicks to login if not signed in
+    </script>
   </head>
   <body>
     <!-- Fixed Header -->
@@ -44,6 +60,27 @@
         <div style="margin-top: 12px">
           <button id="openEarningsBtn" class="btn-primary">Earnings</button>
         </div>
+      </section>
+      <!-- CARD 2 Weekly Earnings-->
+      <section class="card">
+        <h3 style="margin-bottom: 30px">This Week's Earnings</h3>
+        <p class="earnings-row">
+          <strong>Grubhub Total:</strong>
+          <span class="amount" style="float: right">$ 152.44</span>
+        </p>
+        <hr />
+        <p class="earnings-row">
+          <strong>Uber Eats Total:</strong>
+          <span class="amount" style="float: right">$ 211.39</span>
+        </p>
+        <hr />
+        <p class="earnings-row">
+          <strong>Grand Total:</strong>
+          <span class="amount grand" style="float: right; font-weight: bold"
+            >$ 363.83</span
+          >
+        </p>
+        <div style="margin-top: 12px"></div>
       </section>
     </main>
 
@@ -161,5 +198,26 @@
     <div id="modalBackdrop" class="backdrop"></div>
 
     <div id="customToast"></div>
+
+    <!-- Left slide-in drawer (copy from home.html) -->
+    <aside id="sideDrawer" class="drawer">
+      <div class="drawer-header">
+        <h3>George Moreno</h3>
+        <button id="closeDrawerBtn" class="drawer-close" aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      <div class="drawer-content">
+        <a href="home.html" class="drawer-link">Home</a>
+        <a href="deliveries.html" class="drawer-link">Deliveries</a>
+        <a href="earnings.html" class="drawer-link">Earnings</a>
+        <a href="more.html" class="drawer-link">More</a>
+
+        <hr class="drawer-sep" />
+        <button id="logoutBtn" class="drawer-logout">Logout</button>
+        <p style="text-align: center">Version: 3.0.0</p>
+      </div>
+    </aside>
   </body>
 </html>

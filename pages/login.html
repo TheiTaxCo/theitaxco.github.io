@@ -1,0 +1,114 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Login — EarnRoute</title>
+    <link rel="stylesheet" href="../style.css" />
+    <script
+      defer
+      src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
+    ></script>
+
+    <!-- Use the Supabase client directly -->
+    <script type="module">
+      import { supabase } from "../assets/js/config.supabase.js";
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("loginForm");
+        const errorBox = document.getElementById("authError");
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          errorBox.style.display = "none";
+
+          const email = document.getElementById("email").value.trim();
+          const password = document.getElementById("password").value;
+
+          if (!email || !password) {
+            errorBox.textContent = "Please enter your email and password.";
+            errorBox.style.display = "block";
+            return;
+          }
+
+          try {
+            const { error } = await supabase.auth.signInWithPassword({
+              email,
+              password,
+            });
+            if (error) throw error;
+
+            // Redirect to app home on success
+            location.assign(new URL("./home.html", location.href));
+          } catch (err) {
+            errorBox.textContent = err?.message || "Invalid email or password.";
+            errorBox.style.display = "block";
+          }
+        });
+      });
+    </script>
+
+    <style>
+      .auth-card h3 {
+        margin: 0 0 16px 0;
+      }
+      .auth-row {
+        display: grid;
+        gap: 8px;
+        margin: 12px 0;
+      }
+      #authError {
+        display: none;
+        margin-top: 8px;
+        color: #b91c1c;
+        background: #fee2e2;
+        border: 1px solid #fecaca;
+        border-radius: 8px;
+        padding: 10px 12px;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+
+  <body>
+    <header class="app-header">
+      <button class="hamburger" aria-label="Menu">
+        <span class="hamburger-bars"></span>
+      </button>
+      <div class="title">EarnRoute</div>
+    </header>
+
+    <main class="content no-actionbar">
+      <section class="card auth-card" style="max-width: 520px; margin: 0 auto">
+        <h3>Sign in</h3>
+        <form id="loginForm" novalidate>
+          <div class="auth-row">
+            <label for="email">Email</label>
+            <input id="email" type="email" autocomplete="username" required />
+          </div>
+
+          <div class="auth-row">
+            <label for="password">Password</label>
+            <input
+              id="password"
+              type="password"
+              autocomplete="current-password"
+              required
+            />
+          </div>
+
+          <div id="authError">Invalid email or password.</div>
+
+          <div style="margin-top: 16px">
+            <button class="btn-primary" type="submit" style="width: 100%">
+              Login
+            </button>
+          </div>
+        </form>
+      </section>
+    </main>
+  </body>
+</html>

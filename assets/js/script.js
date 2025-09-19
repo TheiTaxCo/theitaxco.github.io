@@ -659,6 +659,31 @@ function setActiveNav() {
   });
 }
 
+function openDrawer() {
+  const drawer = document.getElementById("sideDrawer");
+  const backdrop = document.getElementById("modalBackdrop");
+  if (!drawer || !backdrop) return;
+  drawer.classList.add("open");
+  backdrop.classList.add("show");
+  document.body.classList.add("modal-open"); // prevent background scroll
+}
+
+function closeDrawer() {
+  const drawer = document.getElementById("sideDrawer");
+  const backdrop = document.getElementById("modalBackdrop");
+  if (!drawer || !backdrop) return;
+  drawer.classList.remove("open");
+  backdrop.classList.remove("show");
+  document.body.classList.remove("modal-open");
+}
+
+function toggleDrawer() {
+  const drawer = document.getElementById("sideDrawer");
+  if (!drawer) return;
+  if (drawer.classList.contains("open")) closeDrawer();
+  else openDrawer();
+}
+
 /* ---------- DOM Ready ---------- */
 window.addEventListener("DOMContentLoaded", () => {
   // Icons (header + bottom nav)
@@ -669,6 +694,45 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   loadState();
+
+  // Header hamburger opens/closes the drawer
+  const headerHamburger = document.querySelector(".app-header .hamburger");
+  if (headerHamburger) {
+    headerHamburger.addEventListener("click", (e) => {
+      e.preventDefault();
+      toggleDrawer();
+    });
+  }
+
+  // Drawer close button
+  const closeDrawerBtn = document.getElementById("closeDrawerBtn");
+  if (closeDrawerBtn) {
+    closeDrawerBtn.addEventListener("click", closeDrawer);
+  }
+
+  // (Optional) Close on ESC key
+  document.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") closeDrawer();
+  });
+
+  // DO NOT close when clicking backdrop (to match your sheet behavior)
+  // If in the future you want that, add:
+  // document.getElementById('modalBackdrop')?.addEventListener('click', closeDrawer);
+
+  // Logout button
+  const logoutBtn = document.getElementById("logoutBtn");
+  if (logoutBtn) {
+    logoutBtn.addEventListener("click", async () => {
+      closeDrawer();
+      // use the canonical module helper (handles Supabase sign-out + redirect)
+      if (typeof window.__logoutUser === "function")
+        return window.__logoutUser();
+      // fallback (in case module failed to load)
+      window.location.replace(
+        new URL("./login.html", location.href).toString()
+      );
+    });
+  }
 
   // Start/End on any page that shows them (Home only)
   const startBtn = document.getElementById("startBtn");

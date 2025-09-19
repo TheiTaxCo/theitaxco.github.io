@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Sign Up — EarnRoute</title>
+    <link rel="stylesheet" href="../style.css" />
+  </head>
+  <body>
+    <!-- Fixed Header -->
+    <header class="app-header">
+      <div class="title">EarnRoute Signup</div>
+    </header>
+
+    <!-- Signup Form -->
+    <main class="content no-actionbar">
+      <h2 style="margin-bottom: 16px">Create an account</h2>
+      <form id="signupForm">
+        <div class="form-row">
+          <label for="email">Email</label>
+          <input
+            type="email"
+            id="email"
+            required
+            placeholder="your@email.com"
+          />
+        </div>
+        <div class="form-row">
+          <label for="password">Password</label>
+          <input
+            type="password"
+            id="password"
+            required
+            placeholder="••••••••"
+            minlength="6"
+          />
+        </div>
+        <button type="submit" class="btn-primary">Sign Up</button>
+      </form>
+
+      <!-- Error / Success -->
+      <p
+        id="signupError"
+        style="color: red; display: none; margin-top: 10px"
+      ></p>
+      <p
+        id="signupSuccess"
+        style="color: green; display: none; margin-top: 10px"
+      >
+        Account created! Redirecting…
+      </p>
+
+      <!-- Link to login -->
+      <p style="margin-top: 16px">
+        Already have an account? <a href="./login.html">Login here</a>
+      </p>
+    </main>
+
+    <!-- Scripts -->
+    <script type="module">
+      import { signupUser } from "../assets/js/auth.supabase.js";
+
+      window.addEventListener("DOMContentLoaded", () => {
+        const form = document.getElementById("signupForm");
+        const err = document.getElementById("signupError");
+        const ok = document.getElementById("signupSuccess");
+
+        form.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          err.style.display = "none";
+          ok.style.display = "none";
+
+          try {
+            const email = document.getElementById("email").value.trim();
+            const pwd = document.getElementById("password").value;
+            await signupUser(email, pwd); // <- Supabase signup
+            ok.style.display = "block";
+            setTimeout(() => location.replace("./login.html"), 1500);
+          } catch (ex) {
+            err.textContent = ex.message || "Could not sign up.";
+            err.style.display = "block";
+          }
+        });
+      });
+    </script>
+  </body>
+</html>

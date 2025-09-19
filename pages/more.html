@@ -1,0 +1,135 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>More — EarnRoute</title>
+    <link rel="stylesheet" href="../style.css" />
+    <!-- Load Lucide first, then your app script -->
+    <script
+      defer
+      src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
+    ></script>
+    <script defer src="../assets/js/script.js"></script>
+    <script type="module" src="../assets/js/config.supabase.js"></script>
+    <script type="module" src="../assets/js/auth.supabase.js"></script>
+    <script type="module">
+      import { logoutUser } from "../assets/js/auth.supabase.js";
+      window.__logoutUser = logoutUser;
+    </script>
+
+    <script type="module" src="../assets/js/db.supabase.js"></script>
+    <script type="module" src="../assets/js/sync.supabase.js"></script>
+    <script src="../assets/js/util.dom.js"></script>
+
+    <!-- ✅ Authentication gate -->
+    <script type="module">
+      import { requireAuthOrRedirect } from "../assets/js/auth.supabase.js";
+      requireAuthOrRedirect(); // kicks to login if not signed in
+    </script>
+  </head>
+  <body>
+    <!-- Fixed Header -->
+    <header class="app-header">
+      <button class="hamburger" aria-label="Menu">
+        <span class="hamburger-bars"></span>
+      </button>
+      <div class="title">EarnRoute</div>
+    </header>
+
+    <!-- Scrollable Content (no action bar) -->
+    <main class="content no-actionbar">
+      <section class="card">
+        <h3>Data Extraction</h3>
+        <p>Export your data as Export.json.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <button id="exportJsonBtn" class="btn-primary">Export</button>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Administration</h3>
+        <p>Open Admin for edit timestamps.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <a style="margin-top: 10px" href="admin.html">Open Admin</a>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Settings - Under Construction</h3>
+        <p>Manage Account and App Settings.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <script type="module" src="/assets/js/components/toggle.js"></script>
+          <er-toggle
+            id="toggle-grubhub"
+            label="Show Grubhub"
+            checked
+          ></er-toggle>
+          <er-toggle
+            id="toggle-ubereats"
+            label="Show Uber Eats"
+            checked
+          ></er-toggle>
+          <er-toggle id="toggle-doordash" label="Enable DoorDash"></er-toggle>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Supabase Transmission</h3>
+        <p>Transmit data to Supabase database.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <button id="transmitSupabaseBtn" class="btn-secondary">
+            Transmit
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <div id="customToast"></div>
+
+    <!-- Fixed Bottom Navigation -->
+    <nav class="bottom-nav">
+      <div class="nav-inner">
+        <a class="nav-item" href="home.html">
+          <i data-lucide="home"></i><span>Home</span>
+        </a>
+        <a class="nav-item" href="deliveries.html">
+          <i data-lucide="utensils"></i><span>Deliveries</span>
+        </a>
+        <a class="nav-item" href="earnings.html">
+          <i data-lucide="dollar-sign"></i><span>Earnings</span>
+        </a>
+        <a class="nav-item" href="more.html">
+          <i data-lucide="more-horizontal"></i><span>More</span>
+        </a>
+      </div>
+    </nav>
+
+    <!-- One global backdrop per page -->
+    <div id="modalBackdrop" class="backdrop"></div>
+
+    <!-- Left slide-in drawer (copy from home.html) -->
+    <aside id="sideDrawer" class="drawer">
+      <div class="drawer-header">
+        <h3>George Moreno</h3>
+        <button id="closeDrawerBtn" class="drawer-close" aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      <div class="drawer-content">
+        <a href="home.html" class="drawer-link">Home</a>
+        <a href="deliveries.html" class="drawer-link">Deliveries</a>
+        <a href="earnings.html" class="drawer-link">Earnings</a>
+        <a href="more.html" class="drawer-link">More</a>
+
+        <hr class="drawer-sep" />
+        <button id="logoutBtn" class="drawer-logout">Logout</button>
+        <p style="text-align: center">Version: 3.0.0</p>
+      </div>
+    </aside>
+
+    <!-- Optional: auto-redirect to Admin
+    <script>window.location.replace('admin.html');</script> -->
+  </body>
+</html>
