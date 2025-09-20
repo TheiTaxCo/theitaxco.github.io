@@ -681,6 +681,21 @@ th {
   color: white;
 }
 
+/* Overrides for disabled states */
+.courier-btn.courier-ue[disabled] {
+  color: black;
+}
+
+/* Delivered button — disabled visual (match GH/UE) */
+.btn-delivered:disabled,
+.btn-delivered[disabled] {
+  opacity: 0.6;
+  cursor: default;
+  transform: none;
+  filter: grayscale(1);
+  box-shadow: none;
+}
+
 /* ========== Left Drawer ========== */
 .drawer {
   position: fixed;
