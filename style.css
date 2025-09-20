@@ -150,13 +150,21 @@ button {
 
 /* Inputs inside cards (mobile friendly) */
 .card input[type="text"],
-.card input[type="number"] {
+.card input[type="number"],
+.card input[type="email"],
+.card input[type="password"] {
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
   border: 1px solid #cbd5e1;
   background: #fff;
   text-align: right;
+}
+
+/* Keep email/password left-aligned */
+.card input[type="email"],
+.card input[type="password"] {
+  text-align: left;
 }
 
 /* Two-column label/value row */
