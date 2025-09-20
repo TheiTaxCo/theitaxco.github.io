@@ -322,8 +322,7 @@ function addMeal(
   const removeBtn = document.createElement("button");
   removeBtn.className = "remove-btn";
   removeBtn.innerHTML = "&times;";
-  removeBtn.style.display =
-    totalRows > 0 && !isChecked && !timestampValue ? "inline" : "none";
+  removeBtn.style.display = !isChecked && !timestampValue ? "inline" : "none";
   removeBtn.onclick = () => {
     const parent = row.parentElement;
     parent.removeChild(row);
@@ -410,8 +409,7 @@ function addMeal(
   });
 
   function updateIcons() {
-    const showRemove =
-      !checkbox.checked && !timestamp.textContent && totalRows > 0;
+    const showRemove = !checkbox.checked && !timestamp.textContent;
     const showArrow = checkbox.checked;
     removeBtn.style.display = showRemove ? "inline" : "none";
     arrowBtn.style.display = showArrow ? "inline" : "none";
