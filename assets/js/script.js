@@ -1,12 +1,42 @@
+/* ============================
+   EarnRoute — App Script
+   ============================ */
+
 const MAX_MEALS = 25;
 let activeMealElements = null;
+
+/* ---------- New: slide-up live timer ---------- */
+let slideDurationTimer = null;
 
 /* ---------- Helpers ---------- */
 function formatNow() {
   return new Date().toLocaleString();
 }
 
-/* ---------- Sheet controls (no backdrop-to-close) ---------- */
+/* Human readable HMS (with seconds) */
+function formatDurationHMS(start, end) {
+  const diff = end - start;
+  if (!isFinite(diff) || diff < 0) return "Pending";
+  const hrs = Math.floor(diff / (1000 * 60 * 60));
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  const secs = Math.floor((diff % (1000 * 60)) / 1000);
+  return `${hrs} hour${hrs !== 1 ? "s" : ""} ${mins} minute${
+    mins !== 1 ? "s" : ""
+  } ${secs} second${secs !== 1 ? "s" : ""}`;
+}
+
+/* Existing (HH/MM only) — used elsewhere (Home, completed calc, etc.) */
+function formatDuration(start, end) {
+  const diff = end - start;
+  if (!isFinite(diff) || diff < 0) return "Pending";
+  const hrs = Math.floor(diff / (1000 * 60 * 60));
+  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
+  return `${hrs} hour${hrs !== 1 ? "s" : ""} ${mins} minute${
+    mins !== 1 ? "s" : ""
+  }`;
+}
+
+/* ---------- Slide-up Sheets (no backdrop-to-close) ---------- */
 function openSheet(sheetEl) {
   if (!sheetEl) return;
   const backdrop = document.getElementById("modalBackdrop");
@@ -49,16 +79,6 @@ function formatForExport(dateStr) {
   return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(
     d.getHours()
   )}:${pad(d.getMinutes())}`;
-}
-
-function formatDuration(start, end) {
-  const diff = end - start;
-  if (!isFinite(diff) || diff < 0) return "Pending";
-  const hrs = Math.floor(diff / (1000 * 60 * 60));
-  const mins = Math.floor((diff % (1000 * 60 * 60)) / (1000 * 60));
-  return `${hrs} hour${hrs !== 1 ? "s" : ""} ${mins} minute${
-    mins !== 1 ? "s" : ""
-  }`;
 }
 
 /* ---------- Toast (used by copy) ---------- */
@@ -113,14 +133,14 @@ function saveState() {
       const timestamp = row.querySelector(".timestamp")?.textContent || "";
       const delivered = row.dataset.delivered || "";
       const duration = row.dataset.duration || "";
-      const courierName = row.dataset.courier || ""; // NEW
+      const courierName = row.dataset.courier || ""; // persist courier
       nextMeals.push({
         label,
         checked: !!checkbox?.checked,
         timestamp,
         delivered,
         duration,
-        courierName, // NEW: persist courier
+        courierName,
       });
     });
     state.meals = nextMeals;
@@ -282,7 +302,7 @@ function addMeal(
   deliveredValue = "",
   durationValue = "",
   targetGroupEl = null,
-  courierNameValue = "" // NEW
+  courierNameValue = "" // restore courier
 ) {
   const totalRows = document.querySelectorAll(".checkbox-row").length;
   if (totalRows >= MAX_MEALS) return;
@@ -322,7 +342,8 @@ function addMeal(
   const removeBtn = document.createElement("button");
   removeBtn.className = "remove-btn";
   removeBtn.innerHTML = "&times;";
-  removeBtn.style.display = !isChecked && !timestampValue ? "inline" : "none";
+  removeBtn.style.display =
+    totalRows > 0 && !isChecked && !timestampValue ? "inline" : "none";
   removeBtn.onclick = () => {
     const parent = row.parentElement;
     parent.removeChild(row);
@@ -342,9 +363,9 @@ function addMeal(
     let duration = "Pending";
     if (row.dataset.delivered) {
       const deliveredDate = new Date(row.dataset.delivered);
-      duration = formatDuration(acceptedDate, deliveredDate);
+      duration = formatDurationHMS(acceptedDate, deliveredDate);
     } else if (acceptedRaw) {
-      duration = formatDuration(acceptedDate, new Date());
+      duration = formatDurationHMS(acceptedDate, new Date());
     }
 
     // OPEN deliveries sheet with backdrop
@@ -387,18 +408,30 @@ function addMeal(
       if (deliveredAlready) return;
       row.dataset.courier = name;
       updateCourierUI(name);
-      markBtn.disabled = false; // enable Delivered
+      applyTileClasses(row); // recolor ACTIVE tile immediately
+      markBtn.disabled = false; // enable Delivered once courier set
       saveState();
     }
     ghBtn.onclick = () => selectCourier("grubHub");
     ueBtn.onclick = () => selectCourier("uberEats");
+
+    // --- Live seconds counter while sheet is open for active (not delivered) ---
+    clearInterval(slideDurationTimer);
+    if (!row.dataset.delivered && acceptedRaw) {
+      slideDurationTimer = setInterval(() => {
+        document.getElementById("durationInSheet").textContent =
+          formatDurationHMS(acceptedDate, new Date());
+      }, 1000);
+    } else {
+      slideDurationTimer = null;
+    }
 
     activeMealElements = { row, timestamp, arrowBtn, checkbox };
   };
 
   if (deliveredValue) row.dataset.delivered = deliveredValue;
   if (durationValue) row.dataset.duration = durationValue;
-  if (courierNameValue) row.dataset.courier = courierNameValue; // NEW restore
+  if (courierNameValue) row.dataset.courier = courierNameValue; // restore courier
 
   checkbox.addEventListener("click", () => {
     timestamp.textContent = checkbox.checked
@@ -409,7 +442,8 @@ function addMeal(
   });
 
   function updateIcons() {
-    const showRemove = !checkbox.checked && !timestamp.textContent;
+    const showRemove =
+      !checkbox.checked && !timestamp.textContent && totalRows > 0;
     const showArrow = checkbox.checked;
     removeBtn.style.display = showRemove ? "inline" : "none";
     arrowBtn.style.display = showArrow ? "inline" : "none";
@@ -425,7 +459,7 @@ function addMeal(
   row.appendChild(arrowBtn);
   group.appendChild(row);
 
-  /* NEW: set border classes based on delivered/courier */
+  /* Apply classes for active/completed AND courier color */
   applyTileClasses(row);
 
   ensureCopyButton();
@@ -447,16 +481,20 @@ function applyTileClasses(row) {
   row.classList.remove("active", "completed", "grubhub", "ubereats");
 
   const delivered = (row.dataset.delivered || "").trim();
+  const courier = (row.dataset.courier || "").toLowerCase(); // "grubhub"|"ubereats"|"" (from "grubHub"/"uberEats")
+
   if (delivered) {
     row.classList.add("completed");
-    const c = (row.dataset.courier || "").toLowerCase();
-    if (c === "grubhub") row.classList.add("grubhub");
-    else if (c === "ubereats") row.classList.add("ubereats");
   } else {
     row.classList.add("active");
   }
+
+  // Always add courier if known so CSS can color stripe
+  if (courier === "grubhub") row.classList.add("grubhub");
+  if (courier === "ubereats") row.classList.add("ubereats");
 }
 
+/* ---------- Reset ---------- */
 function resetAll() {
   // 1) Clear storage
   localStorage.removeItem("deliveryAppState");
@@ -682,8 +720,23 @@ function toggleDrawer() {
   else openDrawer();
 }
 
+/* ---------- Inject CSS for active courier colors (no change to style.css) ---------- */
+function injectActiveCourierStyles() {
+  if (document.getElementById("er-active-courier-css")) return;
+  const style = document.createElement("style");
+  style.id = "er-active-courier-css";
+  style.textContent = `
+       .checkbox-row.active.grubhub::before { background: #ff6100; }
+       .checkbox-row.active.ubereats::before { background: #035d1f; }
+     `;
+  document.head.appendChild(style);
+}
+
 /* ---------- DOM Ready ---------- */
 window.addEventListener("DOMContentLoaded", () => {
+  // Inject minimal CSS so active tiles can be courier-colored
+  injectActiveCourierStyles();
+
   // Icons (header + bottom nav)
   initIcons();
   const hdr = document.querySelector('.app-header [data-lucide="menu"]');
@@ -713,22 +766,21 @@ window.addEventListener("DOMContentLoaded", () => {
     if (e.key === "Escape") closeDrawer();
   });
 
-  // DO NOT close when clicking backdrop (to match your sheet behavior)
-  // If in the future you want that, add:
-  // document.getElementById('modalBackdrop')?.addEventListener('click', closeDrawer);
-
-  // Logout button
+  // Logout button (works with or without Supabase present)
   const logoutBtn = document.getElementById("logoutBtn");
   if (logoutBtn) {
     logoutBtn.addEventListener("click", async () => {
+      try {
+        // Supabase sign-out if available
+        if (window.supabase && supabase.auth?.signOut) {
+          await supabase.auth.signOut();
+        }
+      } catch (_) {}
+      // Optional: keep app data; if you want to wipe, uncomment:
+      // localStorage.clear();
+
       closeDrawer();
-      // use the canonical module helper (handles Supabase sign-out + redirect)
-      if (typeof window.__logoutUser === "function")
-        return window.__logoutUser();
-      // fallback (in case module failed to load)
-      window.location.replace(
-        new URL("./login.html", location.href).toString()
-      );
+      window.location.href = "pages/login.html"; // adjust path if needed
     });
   }
 
@@ -761,10 +813,13 @@ window.addEventListener("DOMContentLoaded", () => {
   if (document.getElementById("resetBtn"))
     document.getElementById("resetBtn").onclick = resetAll;
 
-  // Slide-up close buttons (if on page)
+  // Slide-up close buttons (if on page) — ensure timer stops on close
   if (document.getElementById("closeSheetBtn"))
-    document.getElementById("closeSheetBtn").onclick = () =>
+    document.getElementById("closeSheetBtn").onclick = () => {
+      clearInterval(slideDurationTimer);
+      slideDurationTimer = null;
       closeSheet(document.getElementById("slideUpSheet"));
+    };
   if (document.getElementById("closeEarningsBtn"))
     document.getElementById("closeEarningsBtn").onclick = () =>
       closeSheet(document.getElementById("earningsSheet"));
@@ -887,7 +942,8 @@ window.addEventListener("DOMContentLoaded", () => {
 
       // Lock checkbox & delivered button & courier buttons
       activeMealElements.checkbox.disabled = true;
-      /* NEW: update tile classes to completed + courier color */
+
+      /* Update tile classes to completed + courier color */
       applyTileClasses(activeMealElements.row);
       deliveredBtn.disabled = true;
       const ghBtn = document.getElementById("btnCourierGH");
@@ -926,6 +982,10 @@ window.addEventListener("DOMContentLoaded", () => {
       }
 
       saveState();
+
+      // Stop live sheet timer and close sheet
+      clearInterval(slideDurationTimer);
+      slideDurationTimer = null;
       closeSheet(document.getElementById("slideUpSheet"));
 
       activeMealElements = null;
