@@ -780,7 +780,7 @@ window.addEventListener("DOMContentLoaded", () => {
       // localStorage.clear();
 
       closeDrawer();
-      window.location.href = "pages/login.html"; // adjust path if needed
+      window.location.href = "./login.html"; // adjust path if needed
     });
   }
 
