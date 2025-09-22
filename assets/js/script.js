@@ -81,6 +81,63 @@ function formatForExport(dateStr) {
   )}:${pad(d.getMinutes())}`;
 }
 
+/* ---------- Money input mask helpers (no $ in inputs) ---------- */
+// "123456" -> "1,234.56"
+function formatMoneyFromDigits(digitStr) {
+  const clean = (digitStr || "").replace(/\D+/g, "");
+  if (!clean) return "0.00";
+  const n = Number(clean) / 100;
+  return formatMoneyNumber(n);
+}
+
+// 1234.56 -> "1,234.56"
+function formatMoneyNumber(n) {
+  const num = isFinite(n) ? n : 0;
+  return num.toLocaleString(undefined, {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  });
+}
+
+// "$ 1,234.56" or "1,234.56" or "123456" -> 1234.56
+function parseMoney(str) {
+  if (!str) return 0;
+  const digits = String(str).replace(/\D+/g, "");
+  if (!digits) return 0;
+  return Number(digits) / 100;
+}
+
+// Bind a single input to auto-decimal mask (last 2 digits = cents)
+function bindMoneyInput(input) {
+  if (!input || input.dataset.moneyBound === "1") return;
+  input.dataset.moneyBound = "1";
+
+  input.addEventListener("input", () => {
+    const digits = input.value.replace(/\D+/g, "");
+    input.value = formatMoneyFromDigits(digits);
+  });
+
+  input.addEventListener("focus", () => {
+    setTimeout(() => moveCaretToEnd(input), 0);
+  });
+
+  input.addEventListener("blur", () => {
+    const val = parseMoney(input.value);
+    input.value = formatMoneyNumber(val);
+  });
+}
+
+function bindAllMoneyInputs() {
+  [
+    "deliveryPayGrubhub",
+    "tipsPayGrubhub",
+    "adjustmentPayGrubhub",
+    "deliveryPayUber",
+    "tipsPayUber",
+    "adjustmentPayUber",
+  ].forEach((id) => bindMoneyInput(document.getElementById(id)));
+}
+
 /* ---------- Toast (used by copy) ---------- */
 function showToast(msg) {
   const toast = document.getElementById("customToast");
@@ -844,28 +901,39 @@ window.addEventListener("DOMContentLoaded", () => {
         );
         const gh = saved.grubhub || {};
         const ue = saved.uberEats || {};
-        const setVal = (id, val) => {
+
+        // Show "1,234.56" in inputs (no $), even if saved numbers had no commas
+        const setMoneyVal = (id, val) => {
           const el = document.getElementById(id);
-          if (el)
-            el.value = val != null && val !== "" ? Number(val).toFixed(2) : "";
+          if (!el) return;
+          const num = Number(val || 0);
+          el.value = formatMoneyNumber(num); // e.g., "1,234.56"
         };
-        setVal("deliveryPayGrubhub", gh.deliveryPay);
-        setVal("tipsPayGrubhub", gh.tips);
-        setVal("adjustmentPayGrubhub", gh.adjustmentPay);
-        setVal("deliveryPayUber", ue.deliveryPay);
-        setVal("tipsPayUber", ue.tips);
-        setVal("adjustmentPayUber", ue.adjustmentPay);
+        setMoneyVal("deliveryPayGrubhub", gh.deliveryPay);
+        setMoneyVal("tipsPayGrubhub", gh.tips);
+        setMoneyVal("adjustmentPayGrubhub", gh.adjustmentPay);
+        setMoneyVal("deliveryPayUber", ue.deliveryPay);
+        setMoneyVal("tipsPayUber", ue.tips);
+        setMoneyVal("adjustmentPayUber", ue.adjustmentPay);
 
         const setText = (id, val) => {
           const el = document.getElementById(id);
-          if (el)
-            el.textContent =
-              val != null && val !== "" ? Number(val).toFixed(2) : "Pending";
+          if (!el) return;
+          // Show $ only when we have a numeric value; otherwise show Pending
+          if (val != null && val !== "" && !isNaN(Number(val))) {
+            el.textContent = `$ ${Number(val).toFixed(2)}`;
+          } else {
+            el.textContent = "Pending";
+          }
         };
+
         setText("totalEarningsGrubhub", gh.total);
         setText("totalEarningsUber", ue.total);
         setText("grandTotalEarnings", saved.grandTotal);
       } catch (_) {}
+
+      bindAllMoneyInputs(); // attach live auto-decimal formatter to the six inputs
+
       attachEarningsCaretHandlers();
       openSheet(document.getElementById("earningsSheet"));
     };
@@ -876,30 +944,36 @@ window.addEventListener("DOMContentLoaded", () => {
     document
       .getElementById("calcEarningsBtn")
       .addEventListener("click", function () {
-        const ghDelivery =
-          parseFloat(document.getElementById("deliveryPayGrubhub").value) || 0;
-        const ghTips =
-          parseFloat(document.getElementById("tipsPayGrubhub").value) || 0;
-        const ghAdjust =
-          parseFloat(document.getElementById("adjustmentPayGrubhub").value) ||
-          0;
-        const ueDelivery =
-          parseFloat(document.getElementById("deliveryPayUber").value) || 0;
-        const ueTips =
-          parseFloat(document.getElementById("tipsPayUber").value) || 0;
-        const ueAdjust =
-          parseFloat(document.getElementById("adjustmentPayUber").value) || 0;
+        const ghDelivery = parseMoney(
+          document.getElementById("deliveryPayGrubhub").value
+        );
+        const ghTips = parseMoney(
+          document.getElementById("tipsPayGrubhub").value
+        );
+        const ghAdjust = parseMoney(
+          document.getElementById("adjustmentPayGrubhub").value
+        );
+        const ueDelivery = parseMoney(
+          document.getElementById("deliveryPayUber").value
+        );
+        const ueTips = parseMoney(document.getElementById("tipsPayUber").value);
+        const ueAdjust = parseMoney(
+          document.getElementById("adjustmentPayUber").value
+        );
 
         const totalGrubhub = ghDelivery + ghTips + ghAdjust;
         const totalUber = ueDelivery + ueTips + ueAdjust;
         const grandTotal = totalGrubhub + totalUber;
 
-        document.getElementById("totalEarningsGrubhub").textContent =
-          totalGrubhub.toFixed(2);
-        document.getElementById("totalEarningsUber").textContent =
-          totalUber.toFixed(2);
-        document.getElementById("grandTotalEarnings").textContent =
-          grandTotal.toFixed(2);
+        document.getElementById(
+          "totalEarningsGrubhub"
+        ).textContent = `$ ${totalGrubhub.toFixed(2)}`;
+        document.getElementById(
+          "totalEarningsUber"
+        ).textContent = `$ ${totalUber.toFixed(2)}`;
+        document.getElementById(
+          "grandTotalEarnings"
+        ).textContent = `$ ${grandTotal.toFixed(2)}`;
 
         const earningsData = {
           grubhub: {
@@ -951,7 +1025,12 @@ window.addEventListener("DOMContentLoaded", () => {
       row.dataset.delivered = deliveredStr;
       row.dataset.duration = durationStr;
 
-      updateIcons(); // ensure arrow is visible for completed tile
+      // Recompute icons for this completed row (no access to updateIcons here)
+      const { arrowBtn, checkbox, timestamp } = activeMealElements;
+      const accepted = (timestamp.textContent || "").trim() !== "";
+      // Completed tiles should allow opening the slide-up if accepted:
+      if (arrowBtn) arrowBtn.style.display = accepted ? "flex" : "none";
+      // Remove (x) stays hidden once delivered
 
       // Lock checkbox & delivered button & courier buttons
       activeMealElements.checkbox.disabled = true;
