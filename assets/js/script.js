@@ -447,8 +447,12 @@ function addMeal(
   function updateIcons() {
     const accepted = (timestamp.textContent || "").trim() !== "";
     const delivered = !!row.dataset.delivered;
-    const showArrow = checkbox.checked && !delivered; // only when checked & not delivered
-    const showRemove = !showArrow && !accepted && !delivered; // when unchecked, no accepted time, and not delivered
+
+    // Show arrow (>) if the meal has been accepted (checkbox checked) OR it's completed.
+    const showArrow = (checkbox.checked || delivered) && accepted;
+
+    // Show remove (x) only when not delivered and not accepted.
+    const showRemove = !delivered && !checkbox.checked && !accepted; // when unchecked, no accepted time, and not delivered
 
     // Use flex to match CSS button layout
     removeBtn.style.display = showRemove ? "flex" : "none";
@@ -946,6 +950,8 @@ window.addEventListener("DOMContentLoaded", () => {
       const row = activeMealElements.row;
       row.dataset.delivered = deliveredStr;
       row.dataset.duration = durationStr;
+
+      updateIcons(); // ensure arrow is visible for completed tile
 
       // Lock checkbox & delivered button & courier buttons
       activeMealElements.checkbox.disabled = true;
