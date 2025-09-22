@@ -434,20 +434,27 @@ function addMeal(
   if (courierNameValue) row.dataset.courier = courierNameValue; // restore courier
 
   checkbox.addEventListener("click", () => {
+    // Toggle accepted timestamp
     timestamp.textContent = checkbox.checked
       ? "Accepted on: " + formatNow()
       : "";
+
+    // Recompute which icon should show based on current state
     updateIcons();
     saveState();
   });
 
   function updateIcons() {
-    const showRemove =
-      !checkbox.checked && !timestamp.textContent && totalRows > 0;
-    const showArrow = checkbox.checked;
-    removeBtn.style.display = showRemove ? "inline" : "none";
-    arrowBtn.style.display = showArrow ? "inline" : "none";
+    const accepted = (timestamp.textContent || "").trim() !== "";
+    const delivered = !!row.dataset.delivered;
+    const showArrow = checkbox.checked && !delivered; // only when checked & not delivered
+    const showRemove = !showArrow && !accepted && !delivered; // when unchecked, no accepted time, and not delivered
+
+    // Use flex to match CSS button layout
+    removeBtn.style.display = showRemove ? "flex" : "none";
+    arrowBtn.style.display = showArrow ? "flex" : "none";
   }
+
   updateIcons();
 
   left.appendChild(checkbox);
