@@ -4,13 +4,123 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EarnRoute — Dashboard</title>
+
+    <!-- Correct path from /pages/ -->
     <link rel="stylesheet" href="../style.css" />
+
     <style>
-      /* Fallback styles if your main stylesheet doesn't have these */
+      :root {
+        --header-h: 56px; /* fixed header height */
+        --header-bg: #111827; /* near-black */
+        --header-fg: #ffffff; /* white */
+        --drawer-w: 280px;
+        --backdrop: rgba(0, 0, 0, 0.35);
+        --radius: 10px;
+        --card-border: #e6e7eb;
+      }
+
+      /* Base page layout: reserve space for fixed header to avoid overlap */
+      body {
+        margin: 0;
+        background: #fafafa;
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial, sans-serif;
+      }
+      .page {
+        padding-top: var(
+          --header-h
+        ); /* keeps page content below fixed header */
+      }
+
+      /* ===== Fixed Top Header ===== */
+      .app-header {
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: var(--header-h);
+        background: var(--header-bg);
+        color: var(--header-fg);
+        display: flex;
+        align-items: center;
+        gap: 12px;
+        padding: 0 14px;
+        z-index: 1000; /* above cards/content */
+        box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
+      }
+      .app-header .title {
+        font-weight: 600;
+        font-size: 16px;
+        letter-spacing: 0.2px;
+      }
+
+      /* Hamburger button */
+      .hamburger {
+        width: 36px;
+        height: 36px;
+        border: none;
+        border-radius: 8px;
+        background: rgba(255, 255, 255, 0.1);
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+        outline: none;
+        padding: 0;
+      }
+      .hamburger:focus-visible {
+        box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.6);
+      }
+      .hamburger-bars,
+      .hamburger-bars::before,
+      .hamburger-bars::after {
+        content: "";
+        display: block;
+        width: 18px;
+        height: 2px;
+        background: var(--header-fg);
+        border-radius: 2px;
+        position: relative;
+        transition: transform 0.2s ease, opacity 0.2s ease;
+      }
+      .hamburger-bars::before {
+        position: absolute;
+        top: -6px;
+      }
+      .hamburger-bars::after {
+        position: absolute;
+        top: 6px;
+      }
+      /* When drawer is open, animate to X (optional) */
+      .drawer-open .hamburger-bars {
+        transform: rotate(45deg);
+      }
+      .drawer-open .hamburger-bars::before {
+        transform: rotate(90deg);
+        top: 0;
+      }
+      .drawer-open .hamburger-bars::after {
+        opacity: 0;
+      }
+
+      /* ===== Page content container (same look you liked) ===== */
+      .wrap {
+        max-width: 900px;
+        margin: 0 auto;
+        padding: 20px;
+        display: grid;
+        gap: 16px;
+      }
+      .wrap header h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+
+      /* ===== Card + inner layout (your existing look) ===== */
       .card {
         background: #fff;
-        border: 1px solid #e6e7eb;
-        border-radius: 10px;
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius);
         padding: 12px 14px;
         box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
       }
@@ -25,50 +135,236 @@
         color: #374151;
         border-radius: 999px;
         padding: 4px 10px;
-        display: inline-block;
+        display: inline-block; /* important so it doesn't stretch */
         font-size: 12px;
+        width: auto;
+        max-width: none;
       }
 
-      /* Simple layout for demo */
-      body {
-        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
-          Arial, sans-serif;
-        background: #fafafa;
+      /* Make the custom element stretch to the wrap width */
+      .wrap er-gh-active-time {
+        display: block;
+        width: 100%;
+        max-width: 100%;
+      }
+      .wrap .er-gh-active-time.card {
+        width: 100%;
+      }
+
+      /* ===== Left slide-in drawer + backdrop ===== */
+      .drawer {
+        position: fixed;
+        top: var(--header-h); /* slide under header edge */
+        left: 0;
+        width: var(--drawer-w);
+        height: calc(100vh - var(--header-h));
+        background: #ffffff;
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
+        transform: translateX(-100%);
+        transition: transform 0.22s ease-in-out;
+        z-index: 1001; /* above header */
+        display: flex;
+        flex-direction: column;
+      }
+      .drawer.open {
+        transform: translateX(0);
+      }
+
+      .drawer-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 14px 16px;
+        border-bottom: 1px solid #eef0f3;
+      }
+      .drawer-header h3 {
         margin: 0;
-        padding: 20px;
+        font-size: 16px;
+        font-weight: 600;
+        color: #111827;
       }
-      .wrap {
-        max-width: 900px;
-        margin: 0 auto;
-        display: grid;
-        gap: 16px;
+      .drawer-close {
+        border: none;
+        background: transparent;
+        font-size: 22px;
+        line-height: 1;
+        cursor: pointer;
+      }
+      .drawer-content {
+        padding: 12px 16px;
+        overflow: auto;
+      }
+      .drawer-link {
+        display: block;
+        padding: 10px 8px;
+        color: #111827;
+        text-decoration: none;
+        border-radius: 8px;
+      }
+      .drawer-link:hover {
+        background: #f3f4f6;
       }
 
-      header h1 {
-        margin: 0 0 8px;
-        font-size: 20px;
+      .drawer-sep {
+        border: none;
+        border-top: 1px solid #eef0f3;
+        margin: 12px 0;
+      }
+
+      .drawer-logout {
+        width: 100%;
+        padding: 10px 12px;
+        border: 1px solid #ef4444;
+        background: #fff5f5;
+        color: #b91c1c;
+        border-radius: 8px;
+        cursor: pointer;
+        font-weight: 600;
+      }
+      .drawer-logout:hover {
+        background: #fee2e2;
+      }
+
+      .backdrop {
+        position: fixed;
+        inset: 0;
+        background: var(--backdrop);
+        opacity: 0;
+        pointer-events: none;
+        transition: opacity 0.2s ease;
+        z-index: 1000; /* below drawer (1001) but above content */
+      }
+      .backdrop.show {
+        opacity: 1;
+        pointer-events: auto;
+      }
+
+      /* Prevent body scroll when drawer open (iOS-friendly) */
+      .no-scroll {
+        position: fixed;
+        width: 100%;
+        overflow: hidden;
       }
     </style>
   </head>
-  <body>
-    <div class="wrap">
-      <header>
-        <h1>Dashboard</h1>
-        <p>Quick view of your daily metrics.</p>
-      </header>
 
-      <!-- Active Time Card (Grubhub) -->
-      <er-gh-active-time
-        title="Active Time — Grubhub"
-        date="2025-09-29"
-      ></er-gh-active-time>
+  <body>
+    <!-- Fixed Header (sits above content) -->
+    <header class="app-header" id="topHeader">
+      <button
+        class="hamburger"
+        id="hamburgerBtn"
+        aria-label="Menu"
+        aria-expanded="false"
+        aria-controls="sideDrawer"
+      >
+        <span class="hamburger-bars"></span>
+      </button>
+      <div class="title">EarnRoute</div>
+    </header>
+
+    <div class="page">
+      <div class="wrap">
+        <header>
+          <h1>Dashboard</h1>
+          <p>Quick view of your daily metrics.</p>
+        </header>
+
+        <!-- Active Time Card (Grubhub) -->
+        <er-gh-active-time
+          title="Active Time — Grubhub"
+          date="2025-09-29"
+        ></er-gh-active-time>
+      </div>
     </div>
 
-    <!-- Component script -->
+    <!-- Component script (correct relative path from /pages/) -->
     <script src="../assets/js/components/gh-active-time-card.js"></script>
-    <!-- Optional: If you mutate localStorage in this page, dispatch a refresh event
-  <script>
-    window.dispatchEvent(new CustomEvent('er:deliveries:updated'));
-  </script> -->
+
+    <!-- Left slide-in drawer -->
+    <aside id="sideDrawer" class="drawer" aria-hidden="true">
+      <div class="drawer-header">
+        <h3>George Moreno</h3>
+        <button id="closeDrawerBtn" class="drawer-close" aria-label="Close">
+          ×
+        </button>
+      </div>
+
+      <div class="drawer-content">
+        <a href="dashboard.html" class="drawer-link">Dashboard</a>
+        <a href="home.html" class="drawer-link">Home</a>
+        <a href="deliveries.html" class="drawer-link">Deliveries</a>
+        <a href="earnings.html" class="drawer-link">Earnings</a>
+        <a href="more.html" class="drawer-link">More</a>
+
+        <hr class="drawer-sep" />
+
+        <button id="logoutBtn" class="drawer-logout">Logout</button>
+        <p
+          style="
+            text-align: center;
+            color: #6b7280;
+            font-size: 12px;
+            margin-top: 8px;
+          "
+        >
+          Version: 3.0.0
+        </p>
+      </div>
+    </aside>
+
+    <div id="modalBackdrop" class="backdrop" hidden></div>
+
+    <!-- Drawer logic -->
+    <script>
+      (function () {
+        const body = document.body;
+        const drawer = document.getElementById("sideDrawer");
+        const backdrop = document.getElementById("modalBackdrop");
+        const hamburger = document.getElementById("hamburgerBtn");
+        const closeBtn = document.getElementById("closeDrawerBtn");
+
+        function openDrawer() {
+          drawer.classList.add("open");
+          backdrop.classList.add("show");
+          hamburger.setAttribute("aria-expanded", "true");
+          drawer.setAttribute("aria-hidden", "false");
+          body.classList.add("no-scroll", "drawer-open");
+          backdrop.hidden = false;
+        }
+
+        function closeDrawer() {
+          drawer.classList.remove("open");
+          backdrop.classList.remove("show");
+          hamburger.setAttribute("aria-expanded", "false");
+          drawer.setAttribute("aria-hidden", "true");
+          body.classList.remove("no-scroll", "drawer-open");
+          // leave backdrop in DOM; hide for a11y
+          setTimeout(() => {
+            backdrop.hidden = true;
+          }, 200);
+        }
+
+        hamburger.addEventListener("click", () => {
+          if (drawer.classList.contains("open")) closeDrawer();
+          else openDrawer();
+        });
+        closeBtn.addEventListener("click", closeDrawer);
+        backdrop.addEventListener("click", closeDrawer);
+        window.addEventListener("keydown", (e) => {
+          if (e.key === "Escape") closeDrawer();
+        });
+
+        // Simple logout action (adjust if you have a custom auth flow)
+        document.getElementById("logoutBtn").addEventListener("click", () => {
+          try {
+            // Clear app/session bits if needed
+            // localStorage.removeItem('deliveryAppState');
+            // localStorage.removeItem('yourAuthKey');
+          } catch {}
+          window.location.href = "login.html";
+        });
+      })();
+    </script>
   </body>
 </html>
