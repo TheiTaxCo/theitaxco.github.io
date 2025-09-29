@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>EarnRoute — Dashboard</title>
+    <link rel="stylesheet" href="../style.css" />
+    <style>
+      /* Fallback styles if your main stylesheet doesn't have these */
+      .card {
+        background: #fff;
+        border: 1px solid #e6e7eb;
+        border-radius: 10px;
+        padding: 12px 14px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+      }
+      .row {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+      }
+      .pill.gray {
+        background: #f3f4f6;
+        color: #374151;
+        border-radius: 999px;
+        padding: 4px 10px;
+        display: inline-block;
+        font-size: 12px;
+      }
+
+      /* Simple layout for demo */
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, Helvetica,
+          Arial, sans-serif;
+        background: #fafafa;
+        margin: 0;
+        padding: 20px;
+      }
+      .wrap {
+        max-width: 900px;
+        margin: 0 auto;
+        display: grid;
+        gap: 16px;
+      }
+
+      header h1 {
+        margin: 0 0 8px;
+        font-size: 20px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="wrap">
+      <header>
+        <h1>Dashboard</h1>
+        <p>Quick view of your daily metrics.</p>
+      </header>
+
+      <!-- Active Time Card (Grubhub) -->
+      <er-gh-active-time
+        title="Active Time — Grubhub"
+        date="2025-09-29"
+      ></er-gh-active-time>
+    </div>
+
+    <!-- Component script -->
+    <script src="../assets/js/components/gh-active-time-card.js"></script>
+    <!-- Optional: If you mutate localStorage in this page, dispatch a refresh event
+  <script>
+    window.dispatchEvent(new CustomEvent('er:deliveries:updated'));
+  </script> -->
+  </body>
+</html>
