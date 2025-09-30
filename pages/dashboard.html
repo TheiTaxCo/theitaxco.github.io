@@ -10,16 +10,17 @@
 
     <style>
       :root {
-        --header-h: 56px; /* fixed header height */
-        --header-bg: #111827; /* near-black */
-        --header-fg: #ffffff; /* white */
+        --header-h: 56px;
+        --header-bg: #111827;
+        --header-fg: #ffffff;
         --drawer-w: 280px;
         --backdrop: rgba(0, 0, 0, 0.35);
         --radius: 10px;
         --card-border: #e6e7eb;
+        --primary: #2563eb;
       }
 
-      /* Base page layout: reserve space for fixed header to avoid overlap */
+      /* Base page layout: reserve space for fixed header */
       body {
         margin: 0;
         background: #fafafa;
@@ -27,9 +28,7 @@
           Arial, sans-serif;
       }
       .page {
-        padding-top: var(
-          --header-h
-        ); /* keeps page content below fixed header */
+        padding-top: var(--header-h);
       }
 
       /* ===== Fixed Top Header ===== */
@@ -45,7 +44,7 @@
         align-items: center;
         gap: 12px;
         padding: 0 14px;
-        z-index: 1000; /* above cards/content */
+        z-index: 1000;
         box-shadow: 0 1px 3px rgba(0, 0, 0, 0.15);
       }
       .app-header .title {
@@ -54,7 +53,7 @@
         letter-spacing: 0.2px;
       }
 
-      /* Hamburger button */
+      /* Hamburger */
       .hamburger {
         width: 36px;
         height: 36px;
@@ -91,7 +90,6 @@
         position: absolute;
         top: 6px;
       }
-      /* When drawer is open, animate to X (optional) */
       .drawer-open .hamburger-bars {
         transform: rotate(45deg);
       }
@@ -103,7 +101,7 @@
         opacity: 0;
       }
 
-      /* ===== Page content container (same look you liked) ===== */
+      /* ===== Content Width Matches Your Current Look ===== */
       .wrap {
         max-width: 900px;
         margin: 0 auto;
@@ -135,13 +133,13 @@
         color: #374151;
         border-radius: 999px;
         padding: 4px 10px;
-        display: inline-block; /* important so it doesn't stretch */
+        display: inline-block;
         font-size: 12px;
         width: auto;
         max-width: none;
       }
 
-      /* Make the custom element stretch to the wrap width */
+      /* Make custom element stretch to .wrap width */
       .wrap er-gh-active-time {
         display: block;
         width: 100%;
@@ -154,7 +152,7 @@
       /* ===== Left slide-in drawer + backdrop ===== */
       .drawer {
         position: fixed;
-        top: var(--header-h); /* slide under header edge */
+        top: var(--header-h);
         left: 0;
         width: var(--drawer-w);
         height: calc(100vh - var(--header-h));
@@ -162,14 +160,13 @@
         box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
         transform: translateX(-100%);
         transition: transform 0.22s ease-in-out;
-        z-index: 1001; /* above header */
+        z-index: 1001;
         display: flex;
         flex-direction: column;
       }
       .drawer.open {
         transform: translateX(0);
       }
-
       .drawer-header {
         display: flex;
         align-items: center;
@@ -204,13 +201,11 @@
       .drawer-link:hover {
         background: #f3f4f6;
       }
-
       .drawer-sep {
         border: none;
         border-top: 1px solid #eef0f3;
         margin: 12px 0;
       }
-
       .drawer-logout {
         width: 100%;
         padding: 10px 12px;
@@ -219,12 +214,10 @@
         color: #b91c1c;
         border-radius: 8px;
         cursor: pointer;
-        font-weight: 600;
       }
       .drawer-logout:hover {
         background: #fee2e2;
       }
-
       .backdrop {
         position: fixed;
         inset: 0;
@@ -232,24 +225,80 @@
         opacity: 0;
         pointer-events: none;
         transition: opacity 0.2s ease;
-        z-index: 1000; /* below drawer (1001) but above content */
+        z-index: 1000;
       }
       .backdrop.show {
         opacity: 1;
         pointer-events: auto;
       }
-
-      /* Prevent body scroll when drawer open (iOS-friendly) */
       .no-scroll {
         position: fixed;
         width: 100%;
         overflow: hidden;
       }
+
+      /* ===== Date Filter Bar (modern + mobile friendly) ===== */
+      .filter-bar {
+        background: #fff;
+        border: 1px solid var(--card-border);
+        border-radius: var(--radius);
+        padding: 14px 16px;
+        box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04);
+        display: flex;
+        align-items: flex-end;
+        gap: 16px;
+        flex-wrap: wrap;
+      }
+      .filter-group {
+        display: flex;
+        flex-direction: column;
+        gap: 4px;
+        flex: 1;
+        min-width: 140px;
+      }
+      .filter-group label {
+        font-size: 13px;
+        font-weight: 500;
+        color: #374151;
+      }
+      .filter-group input[type="date"] {
+        padding: 6px 10px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 14px;
+        width: 100%;
+      }
+      .filter-actions {
+        display: flex;
+        gap: 10px;
+      }
+      .btn-apply {
+        padding: 8px 14px;
+        background: var(--primary);
+        color: #fff;
+        border: none;
+        border-radius: 6px;
+        cursor: pointer;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      .btn-apply:hover {
+        background: #1d4ed8;
+      }
+      @media (max-width: 640px) {
+        .filter-bar {
+          flex-direction: column;
+          align-items: stretch;
+        }
+        .filter-actions {
+          justify-content: flex-end;
+        }
+      }
     </style>
   </head>
 
   <body>
-    <!-- Fixed Header (sits above content) -->
+    <!-- Fixed Header -->
     <header class="app-header" id="topHeader">
       <button
         class="hamburger"
@@ -270,18 +319,33 @@
           <p>Quick view of your daily metrics.</p>
         </header>
 
-        <!-- Active Time Card (Grubhub) -->
+        <!-- ===== Date Range Filter ===== -->
+        <div class="filter-bar">
+          <div class="filter-group">
+            <label for="startDate">Start Date</label>
+            <input type="date" id="startDate" />
+          </div>
+          <div class="filter-group">
+            <label for="endDate">End Date</label>
+            <input type="date" id="endDate" />
+          </div>
+          <div class="filter-actions">
+            <button class="btn-apply" id="applyFilter">Apply</button>
+          </div>
+        </div>
+
+        <!-- Active Time Card -->
         <er-gh-active-time
+          id="activeCard"
           title="Active Time — Grubhub"
-          date="2025-09-29"
         ></er-gh-active-time>
       </div>
     </div>
 
-    <!-- Component script (correct relative path from /pages/) -->
+    <!-- Component script -->
     <script src="../assets/js/components/gh-active-time-card.js"></script>
 
-    <!-- Left slide-in drawer -->
+    <!-- Drawer -->
     <aside id="sideDrawer" class="drawer" aria-hidden="true">
       <div class="drawer-header">
         <h3>George Moreno</h3>
@@ -315,8 +379,9 @@
 
     <div id="modalBackdrop" class="backdrop" hidden></div>
 
-    <!-- Drawer logic -->
+    <!-- Behavior -->
     <script>
+      // Drawer logic (kept intact)
       (function () {
         const body = document.body;
         const drawer = document.getElementById("sideDrawer");
@@ -332,38 +397,74 @@
           body.classList.add("no-scroll", "drawer-open");
           backdrop.hidden = false;
         }
-
         function closeDrawer() {
           drawer.classList.remove("open");
           backdrop.classList.remove("show");
           hamburger.setAttribute("aria-expanded", "false");
           drawer.setAttribute("aria-hidden", "true");
           body.classList.remove("no-scroll", "drawer-open");
-          // leave backdrop in DOM; hide for a11y
           setTimeout(() => {
             backdrop.hidden = true;
           }, 200);
         }
-
-        hamburger.addEventListener("click", () => {
-          if (drawer.classList.contains("open")) closeDrawer();
-          else openDrawer();
-        });
+        hamburger.addEventListener("click", () =>
+          drawer.classList.contains("open") ? closeDrawer() : openDrawer()
+        );
         closeBtn.addEventListener("click", closeDrawer);
         backdrop.addEventListener("click", closeDrawer);
         window.addEventListener("keydown", (e) => {
           if (e.key === "Escape") closeDrawer();
         });
 
-        // Simple logout action (adjust if you have a custom auth flow)
+        // Logout
         document.getElementById("logoutBtn").addEventListener("click", () => {
           try {
-            // Clear app/session bits if needed
-            // localStorage.removeItem('deliveryAppState');
-            // localStorage.removeItem('yourAuthKey');
+            /* clear session if needed */
           } catch {}
           window.location.href = "login.html";
         });
+      })();
+
+      // Date range filter -> card attributes
+      (function () {
+        const today = new Date();
+        const y = today.getFullYear();
+        const z = (n) => String(n).padStart(2, "0");
+        const todayYMD = `${y}-${z(today.getMonth() + 1)}-${z(
+          today.getDate()
+        )}`;
+
+        const startInput = document.getElementById("startDate");
+        const endInput = document.getElementById("endDate");
+        startInput.value = todayYMD;
+        endInput.value = todayYMD;
+
+        const card = document.getElementById("activeCard");
+
+        function apply() {
+          let s = startInput.value || todayYMD;
+          let e = endInput.value || todayYMD;
+          // Normalize if user inverted range
+          if (s > e) {
+            const t = s;
+            s = e;
+            e = t;
+          }
+
+          card.setAttribute("date-start", s);
+          card.setAttribute("date-end", e);
+
+          // Re-render
+          window.dispatchEvent(new CustomEvent("er:deliveries:updated"));
+        }
+
+        document.getElementById("applyFilter").addEventListener("click", apply);
+        // Also update instantly when the user changes either date:
+        startInput.addEventListener("change", apply);
+        endInput.addEventListener("change", apply);
+
+        // Apply once on load
+        apply();
       })();
     </script>
   </body>
