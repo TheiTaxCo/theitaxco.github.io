@@ -32,6 +32,31 @@
       import { requireAuthOrRedirect } from "../assets/js/auth.supabase.js";
       requireAuthOrRedirect(); // kicks to login if not signed in
     </script>
+
+    <!-- Segmented Tabs (mobile pill style) — scoped styles -->
+    <style>
+      /* ✅ Ensure section headers are always high-contrast and visible */
+      .group-title {
+        color: #111827; /* strong text (gray-900) */
+        opacity: 1 !important; /* defeat any inherited opacity */
+      }
+
+      /* ✅ Make hiding sections bulletproof and avoid faded look */
+      [hidden] {
+        display: none !important;
+      }
+
+      /* Container that holds the pill control; sits under page header */
+      .tabs-host {
+        margin: 10px 0 12px 0;
+      }
+
+      /* Web component host sizing */
+      er-mobile-tabs {
+        display: block;
+        width: 100%;
+      }
+    </style>
   </head>
   <body>
     <!-- Fixed Header -->
@@ -44,14 +69,26 @@
 
     <!-- Scrollable Content (kept same overall structure) -->
     <main class="content">
+      <!-- NEW: Mobile segmented tabs (Active / Completed) -->
+      <div class="tabs-host" role="region" aria-label="Deliveries filters">
+        <!-- Default value = Active -->
+        <er-mobile-tabs
+          id="deliveriesTabs"
+          options="Active,Completed"
+          value="Active"
+        ></er-mobile-tabs>
+      </div>
+
       <h2 style="margin: 0 0 12px 0; margin-bottom: 20px">Deliveries</h2>
 
       <!-- ACTIVE group -->
-      <h2 class="group-title">ACTIVE</h2>
+      <h2 class="group-title" id="titleActive">ACTIVE</h2>
       <div id="checkboxGroupActive" class="checkbox-group"></div>
 
       <!-- COMPLETED group -->
-      <h2 class="group-title" style="margin-top: 18px">COMPLETED</h2>
+      <h2 class="group-title" style="margin-top: 18px" id="titleCompleted">
+        COMPLETED
+      </h2>
       <div id="checkboxGroupCompleted" class="checkbox-group"></div>
 
       <!-- Slide-up: Meal details -->
@@ -89,7 +126,6 @@
             type="button"
             title="Uber Eats"
           >
-            <!-- No width/height attributes; CSS controls size -->
             <iconify-icon
               icon="simple-icons:ubereats"
               aria-hidden="true"
@@ -154,5 +190,249 @@
         <p style="text-align: center">Version: 3.0.0</p>
       </div>
     </aside>
+
+    <!-- =========================
+         Mobile Segmented Tabs (Web Component)
+         ========================= -->
+    <script type="module">
+      /**
+       * <er-mobile-tabs>
+       * Pill-style segmented control for mobile.
+       * - Attributes:
+       *    options="Active,Completed"
+       *    value="Active"  (default)
+       * - Dispatches: change { detail: { value } }
+       */
+      class ERMobileTabs extends HTMLElement {
+        static get observedAttributes() {
+          return ["options", "value", "disabled"];
+        }
+        constructor() {
+          super();
+          this.attachShadow({ mode: "open" });
+          this.shadowRoot.innerHTML = `
+            <style>
+              :host {
+                --track: #e5e7eb;      /* inactive track */
+                --thumb: #ffffff;      /* active pill */
+                --text: #111827;       /* active text */
+                --muted: #6b7280;      /* inactive text */
+                --radius: 12px;
+                --pad: 6px;
+                --height: 38px;
+                --speed: 170ms;
+                display: block;
+              }
+              .wrap {
+                position: relative;
+                background: var(--track);
+                border-radius: calc(var(--radius) + 4px);
+                padding: var(--pad);
+                display: grid;
+                grid-auto-flow: column;
+                gap: 8px;
+                box-shadow: inset 0 1px 0 rgba(0,0,0,.04);
+              }
+              .thumb {
+                position: absolute;
+                top: var(--pad);
+                left: var(--pad);
+                height: var(--height);
+                width: var(--w, 120px);
+                transform: translateX(var(--x, 0px));
+                background: var(--thumb);
+                border-radius: var(--radius);
+                transition: transform var(--speed) ease, width var(--speed) ease;
+                box-shadow: 0 1.5px 4px rgba(16,24,40,.12);
+                will-change: transform, width;
+              }
+              /* ✅ Make the sliding pill stay behind the tab text */
+.thumb {
+  position: absolute;
+  top: var(--pad);
+  left: var(--pad);
+  height: var(--height);
+  width: var(--w, 120px);
+  transform: translateX(var(--x, 0px));
+  background: var(--thumb);
+  border-radius: var(--radius);
+  transition: transform var(--speed) ease, width var(--speed) ease;
+  box-shadow: 0 1.5px 4px rgba(16,24,40,.12);
+  will-change: transform, width;
+  z-index: 0;               /* <— important */
+  pointer-events: none;     /* avoid intercepting clicks */
+}
+
+/* ✅ Style the LIGHT DOM tabs that are slotted in */
+::slotted(button) {
+  all: unset;               /* neutralize any global button styles */
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--height);
+  padding: 0 16px;
+  border-radius: var(--radius);
+  font-weight: 700;
+  font-size: 15px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--muted);      /* inactive text */
+  position: relative;
+  z-index: 1;               /* above the thumb */
+}
+
+/* ✅ Active tab text stays dark and readable on the white pill */
+::slotted(button[aria-selected="true"]) {
+  color: var(--text);
+}
+
+              :host([disabled]) { opacity:.6; pointer-events:none; }
+            </style>
+            <div class="wrap" role="tablist" aria-label="Delivery tabs">
+              <div class="thumb" aria-hidden="true"></div>
+              <slot></slot>
+            </div>
+          `;
+          this._wrap = this.shadowRoot.querySelector(".wrap");
+          this._thumb = this.shadowRoot.querySelector(".thumb");
+          this._btns = [];
+          this._ro = null;
+          this._value = null;
+        }
+        connectedCallback() {
+          this._buildIfNeeded();
+          this._cache();
+          this._bind();
+          const initial =
+            this.getAttribute("value") ||
+            this._btns[0]?.dataset.value ||
+            this._btns[0]?.textContent.trim();
+          this.select(initial, true);
+          this._layout();
+          this._ro = new ResizeObserver(() => this._layout());
+          this._ro.observe(this);
+        }
+        disconnectedCallback() {
+          this._ro && this._ro.disconnect();
+        }
+        attributeChangedCallback(n, o, v) {
+          if (n === "options") {
+            this._buildIfNeeded(true);
+            this._cache();
+            this._bind();
+            this.select(
+              this.getAttribute("value") || this._btns[0]?.dataset.value,
+              true
+            );
+            this._layout();
+          }
+          if (n === "value") {
+            this.select(v);
+          }
+        }
+        get value() {
+          return this._value;
+        }
+        set value(v) {
+          this.setAttribute("value", v);
+        }
+        _buildIfNeeded(force = false) {
+          const hasChildren = this.children.length > 0 && !force;
+          if (hasChildren && !force) return;
+          const list = (this.getAttribute("options") || "Active,Completed")
+            .split(",")
+            .map((s) => s.trim())
+            .filter(Boolean);
+          this.innerHTML = "";
+          list.forEach((label, i) => {
+            const b = document.createElement("button");
+            b.type = "button";
+            b.textContent = label;
+            b.dataset.value = label;
+            b.setAttribute("role", "tab");
+            if (i === 0) b.setAttribute("aria-selected", "true");
+            this.appendChild(b);
+          });
+        }
+        _cache() {
+          this._btns = [...this.querySelectorAll('button[role="tab"],button')];
+        }
+        _bind() {
+          this._btns.forEach((btn) => {
+            btn.onclick = () =>
+              this.select(btn.dataset.value || btn.textContent.trim());
+            btn.onkeydown = (e) => {
+              const i = this._btns.indexOf(btn);
+              if (e.key === "ArrowRight") {
+                e.preventDefault();
+                this._btns[(i + 1) % this._btns.length].click();
+                this._btns[(i + 1) % this._btns.length].focus();
+              }
+              if (e.key === "ArrowLeft") {
+                e.preventDefault();
+                this._btns[
+                  (i - 1 + this._btns.length) % this._btns.length
+                ].click();
+                this._btns[
+                  (i - 1 + this._btns.length) % this._btns.length
+                ].focus();
+              }
+            };
+          });
+        }
+        select(v, silent = false) {
+          const btn =
+            this._btns.find(
+              (b) => (b.dataset.value || b.textContent.trim()) === v
+            ) || this._btns[0];
+          this._btns.forEach((b) => b.setAttribute("aria-selected", "false"));
+          btn.setAttribute("aria-selected", "true");
+          this._value = btn.dataset.value || btn.textContent.trim();
+          this._layout();
+          if (!silent)
+            this.dispatchEvent(
+              new CustomEvent("change", {
+                bubbles: true,
+                detail: { value: this._value },
+              })
+            );
+        }
+        _layout() {
+          if (!this._btns.length) return;
+          const idx = this._btns.findIndex(
+            (b) => b.getAttribute("aria-selected") === "true"
+          );
+          const rects = this._btns.map((b) => b.getBoundingClientRect());
+          const x = rects[idx].left - rects[0].left;
+          const w = rects[idx].width;
+          this._wrap.style.setProperty("--x", x + "px");
+          this._wrap.style.setProperty("--w", w + "px");
+        }
+      }
+      customElements.define("er-mobile-tabs", ERMobileTabs);
+
+      // Page wiring: toggle Active vs Completed sections
+      (function () {
+        const tabs = document.getElementById("deliveriesTabs");
+        const titleA = document.getElementById("titleActive");
+        const groupA = document.getElementById("checkboxGroupActive");
+        const titleC = document.getElementById("titleCompleted");
+        const groupC = document.getElementById("checkboxGroupCompleted");
+
+        function apply(which) {
+          const isActive = which === "Active";
+          titleA.hidden = !isActive;
+          groupA.hidden = !isActive;
+          titleC.hidden = isActive;
+          groupC.hidden = isActive;
+        }
+
+        // Initial state from attribute (default Active)
+        apply(tabs.getAttribute("value") || "Active");
+
+        // Respond to tab changes
+        tabs.addEventListener("change", (e) => apply(e.detail.value));
+      })();
+    </script>
   </body>
 </html>
