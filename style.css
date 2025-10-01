@@ -64,6 +64,7 @@ button {
 .app-header .title {
   font-weight: 800;
   font-size: 22px;
+  letter-spacing: 0.2px;
 }
 
 /* Hamburger button in header */
