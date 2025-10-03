@@ -559,7 +559,7 @@ th {
   background: #ff6100; /* Completed (Grubhub) = orange */
 }
 .checkbox-row.completed.ubereats::before {
-  background: #035d1f; /* Completed (Uber Eats) = green */
+  background: #05bc64; /* Completed (Uber Eats) = green */
 }
 .checkbox-left {
   display: flex;
@@ -672,7 +672,7 @@ th {
   outline: 3px solid orange; /* orange for Grubhub */
 }
 .courier-btn.courier-ue.selected {
-  outline: 3px solid #00b06b; /* green for Uber Eats */
+  outline: 3px solid #05bc64; /* green for Uber Eats */
 }
 
 /* Disabled after delivery is recorded */

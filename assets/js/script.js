@@ -394,6 +394,28 @@ function addMeal(
 
   const timestamp = document.createElement("span");
   timestamp.className = "timestamp";
+
+  left.setAttribute("aria-pressed", checkbox.checked ? "true" : "false");
+
+  // Make the entire left cluster toggle the checkbox
+  left.tabIndex = 0; // keyboard focusable
+  left.setAttribute("role", "button"); // accessibility hint
+
+  left.addEventListener("click", (e) => {
+    // Don't double-toggle if the actual checkbox was clicked
+    if (e.target === checkbox) return;
+    // Don't react to clicks meant for the right-side buttons
+    if (e.target.closest(".remove-btn, .arrow-btn")) return;
+    checkbox.click(); // reuse the existing checkbox handler
+  });
+
+  left.addEventListener("keydown", (e) => {
+    if (e.key === " " || e.key === "Enter") {
+      e.preventDefault();
+      checkbox.click();
+    }
+  });
+
   timestamp.textContent = timestampValue;
 
   const removeBtn = document.createElement("button");
@@ -495,6 +517,9 @@ function addMeal(
     timestamp.textContent = checkbox.checked
       ? "Accepted on: " + formatNow()
       : "";
+
+    // Keep ARIA pressed state in sync for accessibility
+    left.setAttribute("aria-pressed", checkbox.checked ? "true" : "false");
 
     // Recompute which icon should show based on current state
     updateIcons();
@@ -795,7 +820,7 @@ function injectActiveCourierStyles() {
   style.id = "er-active-courier-css";
   style.textContent = `
        .checkbox-row.active.grubhub::before { background: #ff6100; }
-       .checkbox-row.active.ubereats::before { background: #035d1f; }
+       .checkbox-row.active.ubereats::before { background: #05bc64; }
      `;
   document.head.appendChild(style);
 }
