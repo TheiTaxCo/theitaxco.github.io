@@ -24,6 +24,9 @@
     <script type="module" src="../assets/js/sync.supabase.js"></script>
     <script src="../assets/js/util.dom.js"></script>
 
+    <!-- Component script -->
+    <script type="module" src="../assets/js/components/mobile-tabs.js"></script>
+
     <!-- ✅ Authentication gate -->
     <script type="module">
       import { requireAuthOrRedirect } from "../assets/js/auth.supabase.js";
@@ -41,6 +44,15 @@
 
     <!-- Scrollable Content (no action bar here) -->
     <main class="content no-actionbar">
+      <div class="tabs-host" role="region" aria-label="Earnings filters">
+        <er-mobile-tabs
+          id="earningsTabs"
+          options="Day,Week,Month"
+          value="Day"
+        ></er-mobile-tabs>
+      </div>
+      <br />
+
       <section class="card" id="earningsTotals">
         <h3 style="margin-bottom: 30px">Today's Earnings</h3>
         <p class="earnings-row">
