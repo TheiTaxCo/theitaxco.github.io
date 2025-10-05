@@ -53,6 +53,7 @@
       </div>
       <br />
 
+      <!-- DAY card -->
       <section class="card" id="earningsTotals">
         <h3 style="margin-bottom: 30px">Today's Earnings</h3>
         <p class="earnings-row">
@@ -73,8 +74,9 @@
           <button id="openEarningsBtn" class="btn-primary">Earnings</button>
         </div>
       </section>
-      <!-- CARD 2 Weekly Earnings-->
-      <section class="card">
+
+      <!-- WEEK card -->
+      <section class="card" id="earningsWeekCard" hidden>
         <h3 style="margin-bottom: 30px">This Week's Earnings</h3>
         <p class="earnings-row">
           <strong>Grubhub Total:</strong>
@@ -231,5 +233,31 @@
         <p style="text-align: center">Version: 3.0.0</p>
       </div>
     </aside>
+
+    <!-- ✅ Wire the tabs to the cards -->
+    <script type="module">
+      const tabs = document.getElementById("earningsTabs");
+      const dayCard = document.getElementById("earningsTotals");
+      const weekCard = document.getElementById("earningsWeekCard");
+
+      function applyTab(value) {
+        // Default all hidden
+        dayCard.hidden = true;
+        weekCard.hidden = true;
+
+        if (value === "Day") {
+          dayCard.hidden = false;
+        } else if (value === "Week") {
+          weekCard.hidden = false;
+        }
+        // "Month" shows nothing → both remain hidden
+      }
+
+      // Initial render (based on default "Day")
+      applyTab(tabs.value || tabs.getAttribute("value") || "Day");
+
+      // Respond to user interaction
+      tabs.addEventListener("change", (e) => applyTab(e.detail.value));
+    </script>
   </body>
 </html>
