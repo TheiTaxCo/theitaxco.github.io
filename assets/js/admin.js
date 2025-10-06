@@ -1,4 +1,8 @@
-// -------- Admin Utilities --------
+/* ============================
+   Admin — Card-based editor
+   ============================ */
+
+/* -------- Admin Utilities (unchanged behavior) -------- */
 function toInputValueFromLocaleString(localeStr) {
   // localeStr like "8/12/2025, 10:15:32 PM" or "" → "YYYY-MM-DDTHH:MM:SS"
   if (!localeStr) return "";
@@ -19,15 +23,13 @@ function toLocaleStringFromInputValue(inputVal) {
 }
 
 function parseAcceptedRaw(acceptedText) {
-  // acceptedText is like "Accepted on: 8/12/2025, 10:15:32 PM" → "8/12/2025, 10:15:32 PM"
+  // "Accepted on: 8/12/2025, 10:15:32 PM" → "8/12/2025, 10:15:32 PM"
   if (!acceptedText) return "";
   return acceptedText.replace(/^Accepted on:\s*/i, "");
 }
 
 function buildAcceptedDisplay(localeStr) {
-  // back to "Accepted on: <localeStr>"
-  if (!localeStr) return "";
-  return `Accepted on: ${localeStr}`;
+  return localeStr ? `Accepted on: ${localeStr}` : "";
 }
 
 function formatDurationHM(startDate, endDate) {
@@ -41,9 +43,8 @@ function formatDurationHM(startDate, endDate) {
 }
 
 function ensureMealIds(state) {
-  // Add a stable id per meal if missing; keep existing structure untouched.
   let mutated = false;
-  state.meals.forEach((m, idx) => {
+  state.meals.forEach((m) => {
     if (!m.id) {
       // lightweight UUID
       m.id = ([1e7] + -1e3 + -4e3 + -8e3 + -1e11).replace(/[018]/g, (c) =>
@@ -73,68 +74,65 @@ function saveStateAdmin(state) {
   localStorage.setItem("adminTriggerRefresh", String(Date.now()));
 }
 
-// -------- Render Table --------
-function renderTable() {
-  const tbody = document.querySelector("#adminTable tbody");
-  tbody.innerHTML = "";
+/* -------- Render Cards (replaces table UI) -------- */
+function renderCards() {
+  const container = document.getElementById("adminList");
+  if (!container) return;
+  container.innerHTML = "";
 
   const state = loadStateAdmin();
 
   state.meals
-    // show only those with any timestamp data
+    // Only show meals that have any time data (as before)
     .filter(
       (m) =>
         (m.timestamp && m.timestamp.trim()) ||
         (m.delivered && m.delivered.trim())
     )
     .forEach((meal) => {
-      const tr = document.createElement("tr");
-      tr.dataset.id = meal.id;
-
-      const tdLabel = document.createElement("td");
-      tdLabel.textContent = meal.label || "(Untitled Meal)";
-
-      const tdAccepted = document.createElement("td");
       const acceptedRaw = parseAcceptedRaw(meal.timestamp || "");
-      const acceptedInput = document.createElement("input");
-      acceptedInput.type = "datetime-local";
-      acceptedInput.step = "1";
-      acceptedInput.value = toInputValueFromLocaleString(acceptedRaw);
-      tdAccepted.appendChild(acceptedInput);
+      const acceptedVal = toInputValueFromLocaleString(acceptedRaw);
+      const deliveredVal = toInputValueFromLocaleString(meal.delivered || "");
 
-      const tdDelivered = document.createElement("td");
-      const deliveredInput = document.createElement("input");
-      deliveredInput.type = "datetime-local";
-      deliveredInput.step = "1";
-      deliveredInput.value = toInputValueFromLocaleString(meal.delivered || "");
-      tdDelivered.appendChild(deliveredInput);
+      const card = document.createElement("section");
+      card.className = "card meal-card";
+      card.dataset.id = meal.id;
 
-      tr.appendChild(tdLabel);
-      tr.appendChild(tdAccepted);
-      tr.appendChild(tdDelivered);
-      tbody.appendChild(tr);
+      card.innerHTML = `
+        <h4>${meal.label || "Meal"}</h4>
+        <div class="row">
+          <label for="acc-${meal.id}">Accepted</label>
+          <input id="acc-${
+            meal.id
+          }" class="accepted-input" type="datetime-local" step="1" value="${acceptedVal}" />
+        </div>
+        <div class="row">
+          <label for="del-${meal.id}">Delivered</label>
+          <input id="del-${
+            meal.id
+          }" class="delivered-input" type="datetime-local" step="1" value="${deliveredVal}" />
+        </div>
+      `;
+
+      container.appendChild(card);
     });
 }
 
-// -------- Validation --------
-function validateAllRows() {
-  const rows = Array.from(document.querySelectorAll("#adminTable tbody tr"));
+/* -------- Validation (same rules as table version) -------- */
+function validateAllCards() {
+  const cards = Array.from(document.querySelectorAll("#adminList .meal-card"));
   const errors = [];
 
-  rows.forEach((tr) => {
-    const id = tr.dataset.id;
-    const [acceptedInput, deliveredInput] = tr.querySelectorAll(
-      'input[type="datetime-local"]'
-    );
+  cards.forEach((card) => {
+    const id = card.dataset.id;
+    const acceptedInput = card.querySelector(".accepted-input");
+    const deliveredInput = card.querySelector(".delivered-input");
+    const aVal = acceptedInput?.value || "";
+    const dVal = deliveredInput?.value || "";
 
-    const aVal = acceptedInput.value;
-    const dVal = deliveredInput.value;
-
-    // If accepted cleared, delivered must also clear (per your rule)
+    // If accepted cleared, delivered must also clear
     if (!aVal && dVal) {
-      errors.push(
-        `Meal row ${id}: Delivered cannot exist if Accepted is empty.`
-      );
+      errors.push(`Meal ${id}: Delivered cannot exist if Accepted is empty.`);
       return;
     }
 
@@ -142,9 +140,9 @@ function validateAllRows() {
       const aDate = new Date(aVal);
       const dDate = new Date(dVal);
       if (isNaN(aDate) || isNaN(dDate)) {
-        errors.push(`Meal row ${id}: Invalid date/time value.`);
+        errors.push(`Meal ${id}: Invalid date/time value.`);
       } else if (dDate < aDate) {
-        errors.push(`Meal row ${id}: Delivered must be on/after Accepted.`);
+        errors.push(`Meal ${id}: Delivered must be on/after Accepted.`);
       }
     }
   });
@@ -152,40 +150,45 @@ function validateAllRows() {
   return errors;
 }
 
-// -------- Bulk Save --------
+/* -------- Bulk Save -------- */
 function handleBulkSave() {
   const errorBox = document.getElementById("errorBox");
   const successBox = document.getElementById("successBox");
-  errorBox.style.display = "none";
-  successBox.style.display = "none";
-  errorBox.textContent = "";
-  successBox.textContent = "";
+  if (errorBox) {
+    errorBox.style.display = "none";
+    errorBox.textContent = "";
+  }
+  if (successBox) {
+    successBox.style.display = "none";
+    successBox.textContent = "";
+  }
 
-  const errors = validateAllRows();
+  const errors = validateAllCards();
   if (errors.length) {
-    errorBox.textContent = errors.join("\n");
-    errorBox.style.display = "block";
+    if (errorBox) {
+      errorBox.textContent = errors.join("\n");
+      errorBox.style.display = "block";
+    }
     return;
   }
 
   const state = loadStateAdmin();
-  const rowMap = new Map();
-  document.querySelectorAll("#adminTable tbody tr").forEach((tr) => {
-    const [acceptedInput, deliveredInput] = tr.querySelectorAll(
-      'input[type="datetime-local"]'
-    );
-    rowMap.set(tr.dataset.id, {
-      acceptedISO: acceptedInput.value,
-      deliveredISO: deliveredInput.value,
-    });
+
+  // Build a map from the card inputs
+  const map = new Map();
+  document.querySelectorAll("#adminList .meal-card").forEach((card) => {
+    const id = card.dataset.id;
+    const a = card.querySelector(".accepted-input")?.value || "";
+    const d = card.querySelector(".delivered-input")?.value || "";
+    map.set(id, { acceptedISO: a, deliveredISO: d });
   });
 
   state.meals.forEach((meal) => {
-    if (!rowMap.has(meal.id)) return; // not shown on page
+    if (!map.has(meal.id)) return;
 
-    const { acceptedISO, deliveredISO } = rowMap.get(meal.id);
+    const { acceptedISO, deliveredISO } = map.get(meal.id);
 
-    // Apply the clearing rule
+    // Apply the clearing rule & keep same storage format
     const acceptedLocale = acceptedISO
       ? toLocaleStringFromInputValue(acceptedISO)
       : "";
@@ -195,7 +198,6 @@ function handleBulkSave() {
         : ""
       : ""; // accepted empty ⇒ delivered cleared
 
-    // Update storage using your existing schema/format
     meal.timestamp = acceptedLocale ? buildAcceptedDisplay(acceptedLocale) : "";
     meal.delivered = deliveredLocale;
 
@@ -211,25 +213,26 @@ function handleBulkSave() {
 
   saveStateAdmin(state);
 
-  successBox.textContent =
-    "All changes saved. Main page will refresh automatically.";
-  successBox.style.display = "block";
+  if (successBox) {
+    successBox.textContent =
+      "All changes saved. Main page will refresh automatically.";
+    successBox.style.display = "block";
+  }
 }
 
-// -------- Init --------
+/* -------- Init -------- */
 document.addEventListener("DOMContentLoaded", () => {
-  renderTable();
+  renderCards();
 
-  document
-    .getElementById("bulkSaveBtn")
-    .addEventListener("click", handleBulkSave);
-  document.getElementById("reloadBtn").addEventListener("click", renderTable);
+  const saveBtn = document.getElementById("bulkSaveBtn");
+  const reloadBtn = document.getElementById("reloadBtn");
+  if (saveBtn) saveBtn.addEventListener("click", handleBulkSave);
+  if (reloadBtn) reloadBtn.addEventListener("click", renderCards);
 });
 
-// Soft-refresh when Admin updates localStorage from another tab/page
+/* Soft-refresh when Admin updates localStorage from another tab/page */
 window.addEventListener("storage", (e) => {
   if (e.key === "deliveryAppState" || e.key === "adminTriggerRefresh") {
-    // Reload UI from saved state without a hard page reload
-    loadState();
+    renderCards();
   }
 });
