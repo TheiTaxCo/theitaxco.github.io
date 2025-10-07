@@ -74,6 +74,50 @@ function saveStateAdmin(state) {
   localStorage.setItem("adminTriggerRefresh", String(Date.now()));
 }
 
+/* -------- NEW: seconds normalization & jitter helpers -------- */
+function normalizeISOWithSeconds(val) {
+  // Ensure "YYYY-MM-DDTHH:mm:ss" shape (strip milliseconds if present)
+  if (!val) return "";
+  // add :00 if seconds missing
+  if (/^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}$/.test(val)) return `${val}:00`;
+  // strip milliseconds if any
+  return val.replace(/(\d{2})(\.\d+)?$/, "$1");
+}
+
+function jitterSecondsIfZero(iso) {
+  // If seconds are "00", replace with random 1..59 to avoid iOS default zeros
+  if (!iso) return "";
+  const m = iso.match(/^(\d{4}-\d{2}-\d{2}T\d{2}:\d{2}):(\d{2})$/);
+  if (!m) return iso;
+  const seconds = m[2];
+  if (seconds !== "00") return iso;
+  const rand = Math.floor(Math.random() * 59) + 1; // 1..59
+  return `${m[1]}:${String(rand).padStart(2, "0")}`;
+}
+
+function addSeconds(iso, secondsToAdd) {
+  if (!iso) return "";
+  const d = new Date(iso);
+  if (isNaN(d)) return iso;
+  d.setSeconds(d.getSeconds() + secondsToAdd);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(
+    d.getHours()
+  )}:${pad(d.getMinutes())}:${pad(d.getSeconds())}`;
+}
+
+function ensureDeliveredNotBeforeAccepted(accISO, delISO) {
+  if (!accISO || !delISO) return { accISO, delISO };
+  const a = new Date(accISO);
+  const d = new Date(delISO);
+  if (isNaN(a) || isNaN(d)) return { accISO, delISO };
+  if (d < a) {
+    // bump delivered to be 1s after accepted
+    return { accISO, delISO: addSeconds(accISO, 1) };
+  }
+  return { accISO, delISO };
+}
+
 /* -------- Render Cards (replaces table UI) -------- */
 function renderCards() {
   const container = document.getElementById("adminList");
@@ -178,8 +222,20 @@ function handleBulkSave() {
   const map = new Map();
   document.querySelectorAll("#adminList .meal-card").forEach((card) => {
     const id = card.dataset.id;
-    const a = card.querySelector(".accepted-input")?.value || "";
-    const d = card.querySelector(".delivered-input")?.value || "";
+    let a = card.querySelector(".accepted-input")?.value || "";
+    let d = card.querySelector(".delivered-input")?.value || "";
+
+    // --- NEW: normalize + jitter seconds if ":00" or seconds missing ---
+    a = normalizeISOWithSeconds(a);
+    d = normalizeISOWithSeconds(d);
+    a = jitterSecondsIfZero(a);
+    d = jitterSecondsIfZero(d);
+
+    // --- NEW: guarantee Delivered >= Accepted (if both present) ---
+    const fixed = ensureDeliveredNotBeforeAccepted(a, d);
+    a = fixed.accISO;
+    d = fixed.delISO;
+
     map.set(id, { acceptedISO: a, deliveredISO: d });
   });
 
@@ -215,7 +271,7 @@ function handleBulkSave() {
 
   if (successBox) {
     successBox.textContent =
-      "All changes saved. Main page will refresh automatically.";
+      "All changes saved. Seconds auto-adjusted where needed.";
     successBox.style.display = "block";
   }
 }
