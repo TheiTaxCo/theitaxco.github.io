@@ -106,3 +106,43 @@ export async function listPlatforms() {
   if (error) throw error;
   return data || [];
 }
+
+// --- Weekly Earnings (Mon-Sun) from earnings table ---
+export async function sumWeeklyEarningsFromEarningsTable(
+  startDateISO,
+  endDateISO
+) {
+  // startDateISO / endDateISO: "YYYY-MM-DD"
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+  if (!user) throw new Error("Not authenticated");
+
+  // Pull only what's needed; totals are stored as strings in your sample
+  const { data, error } = await supabase
+    .from("earnings")
+    .select("platform_id, total, earnings_date")
+    .eq("user_id", user.id)
+    .gte("earnings_date", startDateISO)
+    .lte("earnings_date", endDateISO);
+
+  if (error) throw error;
+
+  // Map your platform ids → codes (no join needed for now)
+  // platforms table example shows: 1=grubHub, 2=uberEats
+  const idToCode = { 1: "grubhub", 2: "ubereats" };
+
+  let gh = 0,
+    ue = 0;
+  for (const r of data || []) {
+    const code = idToCode[r.platform_id];
+    const amt = parseFloat(r.total) || 0;
+    if (code === "grubhub") gh += amt;
+    else if (code === "ubereats") ue += amt;
+  }
+  return {
+    grubhub: Number(gh.toFixed(2)),
+    ubereats: Number(ue.toFixed(2)),
+    grand: Number((gh + ue).toFixed(2)),
+  };
+}

@@ -80,17 +80,24 @@
         <h3 style="margin-bottom: 30px">This Week's Earnings</h3>
         <p class="earnings-row">
           <strong>Grubhub Total:</strong>
-          <span class="amount" style="float: right">$ 0.00</span>
+          <span class="amount" id="ghWeekTotal" style="float: right"
+            >$ 0.00</span
+          >
         </p>
         <hr class="drawer-sep" />
         <p class="earnings-row">
           <strong>Uber Eats Total:</strong>
-          <span class="amount" style="float: right">$ 0.00</span>
+          <span class="amount" id="ueWeekTotal" style="float: right"
+            >$ 0.00</span
+          >
         </p>
         <hr class="drawer-sep" />
         <p class="earnings-row">
           <strong>Grand Total:</strong>
-          <span class="amount grand" style="float: right; font-weight: bold"
+          <span
+            class="amount grand"
+            id="grandWeekTotal"
+            style="float: right; font-weight: bold"
             >$ 0.00</span
           >
         </p>
@@ -235,13 +242,66 @@
     </aside>
 
     <!-- ✅ Wire the tabs to the cards -->
+    <!-- ✅ Wire the tabs to the cards -->
     <script type="module">
+      import { sumWeeklyEarningsFromEarningsTable } from "../assets/js/db.supabase.js";
+
       const tabs = document.getElementById("earningsTabs");
       const dayCard = document.getElementById("earningsTotals");
       const weekCard = document.getElementById("earningsWeekCard");
 
+      const $ = (id) => document.getElementById(id);
+
+      // Local Mon→Sun of this week
+      function mondayOfThisWeek(d = new Date()) {
+        const day = d.getDay(); // 0=Sun..6=Sat
+        const diffFromMon = (day + 6) % 7; // Mon=0
+        const m = new Date(d);
+        m.setHours(0, 0, 0, 0);
+        m.setDate(d.getDate() - diffFromMon);
+        return m;
+      }
+      function sundayOfThisWeek(d = new Date()) {
+        const m = mondayOfThisWeek(d);
+        const s = new Date(m);
+        s.setDate(m.getDate() + 6);
+        s.setHours(23, 59, 59, 999);
+        return s;
+      }
+      function fmtYYYYMMDD(dt) {
+        const pad = (n) => String(n).padStart(2, "0");
+        return `${dt.getFullYear()}-${pad(dt.getMonth() + 1)}-${pad(
+          dt.getDate()
+        )}`;
+      }
+
+      async function refreshWeeklyCard() {
+        const start = mondayOfThisWeek();
+        const end = sundayOfThisWeek();
+        try {
+          const sums = await sumWeeklyEarningsFromEarningsTable(
+            fmtYYYYMMDD(start),
+            fmtYYYYMMDD(end)
+          );
+          // Your Week card spans currently include the "$ " in HTML.
+          // We'll keep that style and set values like "$ 12.34".
+          const set$ = (id, val) => {
+            const el = $(id);
+            if (el) el.textContent = `$ ${(Number(val) || 0).toFixed(2)}`;
+          };
+          set$("ghWeekTotal", sums.grubhub);
+          set$("ueWeekTotal", sums.ubereats);
+          set$("grandWeekTotal", sums.grand);
+        } catch (err) {
+          console.warn("[Weekly totals] load failed:", err);
+          ["ghWeekTotal", "ueWeekTotal", "grandWeekTotal"].forEach((id) => {
+            const el = $(id);
+            if (el) el.textContent = "$ 0.00";
+          });
+        }
+      }
+
       function applyTab(value) {
-        // Default all hidden
         dayCard.hidden = true;
         weekCard.hidden = true;
 
@@ -249,14 +309,15 @@
           dayCard.hidden = false;
         } else if (value === "Week") {
           weekCard.hidden = false;
+          refreshWeeklyCard();
         }
-        // "Month" shows nothing → both remain hidden
+        // "Month" => both hidden for now
       }
 
       // Initial render (based on default "Day")
       applyTab(tabs.value || tabs.getAttribute("value") || "Day");
 
-      // Respond to user interaction
+      // Respond to user selection
       tabs.addEventListener("change", (e) => applyTab(e.detail.value));
     </script>
   </body>
