@@ -413,15 +413,35 @@
 
           //Update the sentence
           if (subtitle) {
-            subtitle.textContent = `Below you are seeing ${
+            subtitle.textContent = `List of ${
               isActive ? "active" : "completed"
-            } meals.`;
+            } orders.`;
           }
         }
 
         apply(tabs.getAttribute("value") || "Active");
         tabs.addEventListener("change", (e) => apply(e.detail.value));
       })();
+    </script>
+
+    <!-- 🔧 Display-only tweak for Accepted time in slide-up sheet -->
+    <script>
+      // When a tile's ">" arrow is tapped, script.js opens the sheet and
+      // sets #acceptedTimeInSheet to the tile's timestamp text, which may include
+      // the prefix "Accepted on: ...". We strip that prefix so the sheet shows
+      // "Accepted: <date/time>" without duplicating the word "Accepted".
+      document.addEventListener("click", function (e) {
+        if (e.target && e.target.classList.contains("arrow-btn")) {
+          // Run after script.js updates the sheet contents
+          setTimeout(() => {
+            const span = document.getElementById("acceptedTimeInSheet");
+            if (!span) return;
+            const raw = span.textContent || "";
+            const cleaned = raw.replace(/^Accepted on:\s*/i, "");
+            span.textContent = cleaned || "Pending";
+          }, 0);
+        }
+      });
     </script>
   </body>
 </html>
