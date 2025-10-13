@@ -392,17 +392,21 @@ button {
   height: 65vh;
   overflow-y: auto;
   background: white;
-  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
+  box-shadow: none;
   padding: 20px;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
   z-index: 1100; /* above header/nav */
-  transition: transform 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
   transform: translateY(0%);
   margin: 0 auto;
 }
 .slide-up.hidden {
   transform: translateY(100%);
+  box-shadow: none;
+}
+.slide-up:not(.hidden) {
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .sheet-header {
@@ -707,16 +711,17 @@ th {
   width: 280px;
   max-width: 85vw;
   background: #fff;
-  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.18);
+  box-shadow: none;
   z-index: 1055; /* above backdrop (1040) and sheets (1050) */
   transform: translateX(-100%); /* hidden off-screen */
-  transition: transform 0.25s ease;
+  transition: transform 0.25s ease, box-shadow 0.25s ease;
   display: flex;
   flex-direction: column;
 }
 
 .drawer.open {
   transform: translateX(0);
+  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.18);
 }
 
 .drawer-header {
@@ -780,6 +785,60 @@ th {
   color: #fff;
   border: none;
   cursor: pointer;
+}
+
+/* ===========================
+   GLOBAL SHADOW VISIBILITY RULE
+   =========================== */
+/* Prevent hidden/offscreen components from casting shadows */
+[hidden],
+.drawer:not(.open),
+.slide-up.hidden,
+.modal.hidden,
+.bottom-sheet.hidden {
+  box-shadow: none !important;
+  transition: box-shadow 0.25s ease;
+}
+
+/* Apply shadows only when visible */
+.drawer.open,
+.slide-up:not(.hidden),
+.modal:not(.hidden),
+.bottom-sheet:not(.hidden) {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* ===== Earnings slide-up: ultra compact layout ===== */
+#earningsSheet .form-row {
+  overflow: visible;
+  margin: 4px 0; /* less vertical gap */
+}
+
+#earningsSheet .form-row label {
+  min-width: 0;
+  font-size: 13.5px;
+}
+
+#earningsSheet input[type="number"],
+#earningsSheet input[type="text"] {
+  width: 70px; /* slightly narrower */
+  height: 30px; /* ultra compact height */
+  padding: 4px 8px; /* tighter padding */
+  border: 1px solid #cbd5e1;
+  border-radius: 7px;
+  background: #fff;
+  text-align: right;
+  font-size: 14px;
+  box-sizing: border-box;
+  -webkit-appearance: none;
+  appearance: none;
+  background-clip: padding-box;
+}
+
+#earningsSheet input[type="number"]::-webkit-outer-spin-button,
+#earningsSheet input[type="number"]::-webkit-inner-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
 }
 
 /* ========== Animations ========== */

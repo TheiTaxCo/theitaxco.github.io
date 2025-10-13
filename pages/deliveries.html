@@ -77,13 +77,11 @@
       <p id="mealsSubtitle">mealSubtitle value.</p>
 
       <!-- ACTIVE group -->
-      <h2 class="group-title" id="titleActive">ACTIVE</h2>
+      <h2 class="group-title" id="titleActive"></h2>
       <div id="checkboxGroupActive" class="checkbox-group"></div>
 
       <!-- COMPLETED group -->
-      <h2 class="group-title" style="margin-top: 18px" id="titleCompleted">
-        COMPLETED
-      </h2>
+      <h2 class="group-title" style="margin-top: 18px" id="titleCompleted"></h2>
       <div id="checkboxGroupCompleted" class="checkbox-group"></div>
 
       <!-- Slide-up: Meal details -->
@@ -413,9 +411,9 @@
 
           //Update the sentence
           if (subtitle) {
-            subtitle.textContent = `List of ${
-              isActive ? "active" : "completed"
-            } orders.`;
+            subtitle.textContent = `Order ${
+              isActive ? "Active" : "Completed"
+            } List.`;
           }
         }
 
