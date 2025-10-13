@@ -823,12 +823,13 @@ th {
 #earningsSheet input[type="text"] {
   width: 70px; /* slightly narrower */
   height: 30px; /* ultra compact height */
-  padding: 4px 8px; /* tighter padding */
+  line-height: 28px;
+  padding: 2px 8px; /* tighter padding */
   border: 1px solid #cbd5e1;
   border-radius: 7px;
   background: #fff;
   text-align: right;
-  font-size: 14px;
+  font-size: 16px;
   box-sizing: border-box;
   -webkit-appearance: none;
   appearance: none;
