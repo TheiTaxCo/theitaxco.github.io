@@ -842,6 +842,18 @@ th {
   margin: 0;
 }
 
+/* Custom heights for specific slide-ups */
+
+/* Earnings: slightly taller */
+#earningsSheet.slide-up {
+  height: 75vh; /* was 65vh — increased height */
+}
+
+/* Deliveries: slightly shorter */
+#slideUpSheet.slide-up {
+  height: 45vh; /* was 65vh — decreased height */
+}
+
 /* ========== Animations ========== */
 @keyframes fadein {
   from {
