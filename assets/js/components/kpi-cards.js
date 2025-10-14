@@ -1,7 +1,4 @@
-// /assets/js/components/kpi-cards.js
-// If your TS server still nags in JS files, you can optionally enable:
-// // @ts-nocheck
-
+// ../assets/js/components/kpi-cards.js
 class ERKpiCards extends HTMLElement {
   constructor() {
     super();
@@ -58,7 +55,9 @@ class ERKpiCards extends HTMLElement {
     });
   }
 
+  /* ====== READ STATE (excludes adjustments from earnings) ====== */
   readState() {
+    // Meals & odometer
     let meals = [];
     let odoStart = null;
     let odoEnd = null;
@@ -71,10 +70,18 @@ class ERKpiCards extends HTMLElement {
       if (s?.odometerEnd !== undefined) odoEnd = parseFloat(s.odometerEnd);
     } catch (_) {}
 
+    // Earnings: deliveryPay + tips only (NO adjustmentPay)
+    const num = (v) => (v == null || v === "" ? 0 : parseFloat(v)) || 0;
     let earnings = 0;
     try {
       const es = JSON.parse(localStorage.getItem("earningsSummary") || "{}");
-      earnings = es?.grandTotal ? parseFloat(es.grandTotal) : 0;
+      const gh = es.grubhub || {};
+      const ue = es.uberEats || es.ubereats || {};
+
+      const ghEarnings = num(gh.deliveryPay) + num(gh.tips); // exclude gh.adjustmentPay
+      const ueEarnings = num(ue.deliveryPay) + num(ue.tips); // exclude ue.adjustmentPay
+
+      earnings = ghEarnings + ueEarnings;
       if (!isFinite(earnings)) earnings = 0;
     } catch (_) {}
 
@@ -99,14 +106,14 @@ class ERKpiCards extends HTMLElement {
   compute() {
     const { completedCount, earnings, miles } = this.readState();
 
-    // Average Order = total earnings / completed count
+    // Average Order = earnings (no adjustments) / completed count
     const avgOrder = completedCount > 0 ? earnings / completedCount : 0;
 
     // Miles Per Order = total miles / completed count
     const milesPerOrder =
       completedCount > 0 && miles > 0 ? miles / completedCount : 0;
 
-    // Pay Per Mile = total earnings / total miles
+    // Pay Per Mile = earnings (no adjustments) / total miles
     const payPerMile = miles > 0 ? earnings / miles : 0;
 
     return {
@@ -135,7 +142,6 @@ class ERKpiCards extends HTMLElement {
     if (!isFinite(v)) return "$0.00";
     return `$${v.toFixed(frac)}`;
   }
-
   _formatNumber(n, frac = 1) {
     const v = Number(n);
     if (!isFinite(v)) return frac === 1 ? "0.0" : "0";
@@ -144,38 +150,36 @@ class ERKpiCards extends HTMLElement {
 
   render() {
     const style = `
-        :host{display:block}
-        .kpi-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
-        .kpi-card{
-          border:1px solid #d1d5db;background:#fff;border-radius:12px;padding:12px;
-          box-shadow:0 2px 6px rgba(0,0,0,.08)
-        }
-        .kpi-label{font-size:12px;color:#6b7280;margin-bottom:8px}
-        .kpi-value{font-size:20px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums}
-        .kpi-sub{margin-top:6px;font-size:11px;color:#94a3b8}
-        @media (max-width: 420px){ .kpi-wrap{grid-template-columns:1fr} }
-      `;
-
+      :host{display:block}
+      .kpi-wrap{display:grid;grid-template-columns:repeat(3,1fr);gap:12px}
+      .kpi-card{
+        border:1px solid #d1d5db;background:#fff;border-radius:12px;padding:12px;
+        box-shadow:0 2px 6px rgba(0,0,0,.08)
+      }
+      .kpi-label{font-size:12px;color:#6b7280;margin-bottom:8px}
+      .kpi-value{font-size:20px;font-weight:800;line-height:1.2;font-variant-numeric:tabular-nums}
+      .kpi-sub{margin-top:6px;font-size:11px;color:#94a3b8}
+      @media (max-width: 420px){ .kpi-wrap{grid-template-columns:1fr} }
+    `;
     const html = `
-        <div class="kpi-wrap">
-          <div class="kpi-card">
-            <div class="kpi-label">Pay Per Order</div>
-            <div class="kpi-value" id="avgOrderVal">$0.00</div>
-            <div class="kpi-sub">Total earnings ÷ completed count</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Miles Per Order</div>
-            <div class="kpi-value" id="milesPerOrderVal">0.0</div>
-            <div class="kpi-sub">Total miles ÷ completed count</div>
-          </div>
-          <div class="kpi-card">
-            <div class="kpi-label">Pay Per Mile</div>
-            <div class="kpi-value" id="payPerMileVal">$0.00</div>
-            <div class="kpi-sub">Total earnings ÷ total miles</div>
-          </div>
+      <div class="kpi-wrap">
+        <div class="kpi-card">
+          <div class="kpi-label">Average Order</div>
+          <div class="kpi-value" id="avgOrderVal">$0.00</div>
+          <div class="kpi-sub">Total earnings ÷ completed count</div>
         </div>
-      `;
-
+        <div class="kpi-card">
+          <div class="kpi-label">Miles Per Order</div>
+          <div class="kpi-value" id="milesPerOrderVal">0.0</div>
+          <div class="kpi-sub">Total miles ÷ completed count</div>
+        </div>
+        <div class="kpi-card">
+          <div class="kpi-label">Pay Per Mile</div>
+          <div class="kpi-value" id="payPerMileVal">$0.00</div>
+          <div class="kpi-sub">Total earnings ÷ total miles</div>
+        </div>
+      </div>
+    `;
     this.shadowRoot.innerHTML = `<style>${style}</style>${html}`;
   }
 }
