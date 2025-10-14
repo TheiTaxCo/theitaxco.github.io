@@ -59,8 +59,11 @@
       <section class="card">
         <h3>Settings - Under Construction</h3>
         <p>Manage Account and App Settings.</p>
-        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+
+        <!-- change flex direction to column so each toggle gets its own row -->
+        <div style="display: flex; flex-direction: column; gap: 10px">
           <script type="module" src="/assets/js/components/toggle.js"></script>
+
           <er-toggle
             id="toggle-grubhub"
             label="Show Grubhub"
@@ -74,6 +77,7 @@
           <er-toggle id="toggle-doordash" label="Enable DoorDash"></er-toggle>
         </div>
       </section>
+
       <section class="card">
         <h3>Supabase Transmission</h3>
         <p>Transmit data to Supabase database.</p>
@@ -81,6 +85,13 @@
           <button id="transmitSupabaseBtn" class="btn-secondary">
             Transmit
           </button>
+        </div>
+      </section>
+      <section class="card">
+        <h3>Data Import</h3>
+        <p>Load a previously exported JSON into the app for testing.</p>
+        <div style="display: flex; gap: 10px; flex-wrap: wrap">
+          <a href="import.html">Open Import</a>
         </div>
       </section>
     </main>

@@ -64,7 +64,6 @@ button {
 .app-header .title {
   font-weight: 800;
   font-size: 22px;
-  letter-spacing: 0.2px;
 }
 
 /* Hamburger button in header */
@@ -150,10 +149,13 @@ button {
 }
 
 /* Inputs inside cards (mobile friendly) */
-.card input[type="text"],
-.card input[type="number"],
-.card input[type="email"],
-.card input[type="password"] {
+.card
+  :where(
+    input[type="text"],
+    input[type="number"],
+    input[type="email"],
+    input[type="password"]
+  ) {
   width: 100%;
   padding: 10px 12px;
   border-radius: 10px;
@@ -392,21 +394,19 @@ button {
   height: 65vh;
   overflow-y: auto;
   background: white;
-  box-shadow: none;
+  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
   padding: 20px;
   border-top-left-radius: 12px;
   border-top-right-radius: 12px;
   z-index: 1100; /* above header/nav */
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.25s ease;
   transform: translateY(0%);
   margin: 0 auto;
+  will-change: transform;
+  -webkit-overflow-scrolling: touch;
 }
 .slide-up.hidden {
   transform: translateY(100%);
-  box-shadow: none;
-}
-.slide-up:not(.hidden) {
-  box-shadow: 0 -4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .sheet-header {
@@ -481,9 +481,7 @@ button {
 .form-row label {
   flex: 1 1 auto;
 }
-#earningsSheet input[type="text"],
 #earningsSheet input[type="number"] {
-  width: 75px;
   text-align: right;
   margin-left: 10px;
 }
@@ -523,20 +521,13 @@ th {
   justify-content: space-between;
   background-color: #fff;
   padding: 16px 20px;
-  border: #00b06b;
+  border-left: none; /* don't use a real border for the stripe */
   border-radius: 14px;
   box-shadow: var(--shadow);
   margin-bottom: 12px;
   cursor: pointer;
   position: relative;
   height: 60px;
-}
-
-/* Make sure the tile itself has the radius you want */
-.checkbox-row {
-  position: relative;
-  border-left: none; /* don't use a real border for the stripe */
-  border-radius: 14px; /* <-- match your tile radius */
 }
 
 /* Left status stripe (straight inside edge, rounded outside edge) */
@@ -563,7 +554,7 @@ th {
   background: #ff6100; /* Completed (Grubhub) = orange */
 }
 .checkbox-row.completed.ubereats::before {
-  background: #05bc64; /* Completed (Uber Eats) = green */
+  background: #035d1f; /* Completed (Uber Eats) = green */
 }
 .checkbox-left {
   display: flex;
@@ -667,8 +658,8 @@ th {
 
 /* ----------------- Uber Eats ----------------- */
 .courier-ue {
-  background: #05bc64; /* Uber Eats black */
-  color: black;
+  background: #000000; /* Uber Eats black */
+  color: #ffffff;
 }
 
 /* Selected visual state (mutually exclusive in JS) */
@@ -676,7 +667,7 @@ th {
   outline: 3px solid orange; /* orange for Grubhub */
 }
 .courier-btn.courier-ue.selected {
-  outline: 3px solid #05bc64; /* green for Uber Eats */
+  outline: 3px solid #00b06b; /* green for Uber Eats */
 }
 
 /* Disabled after delivery is recorded */
@@ -685,11 +676,6 @@ th {
   cursor: default;
   transform: none;
   color: white;
-}
-
-/* Overrides for disabled states */
-.courier-btn.courier-ue[disabled] {
-  color: black;
 }
 
 /* Delivered button — disabled visual (match GH/UE) */
@@ -714,14 +700,13 @@ th {
   box-shadow: none;
   z-index: 1055; /* above backdrop (1040) and sheets (1050) */
   transform: translateX(-100%); /* hidden off-screen */
-  transition: transform 0.25s ease, box-shadow 0.25s ease;
+  transition: transform 0.25s ease;
   display: flex;
   flex-direction: column;
 }
 
 .drawer.open {
   transform: translateX(0);
-  box-shadow: 2px 0 16px rgba(0, 0, 0, 0.18);
 }
 
 .drawer-header {
@@ -787,6 +772,43 @@ th {
   cursor: pointer;
 }
 
+/* ========== KPI Cards (Home) ========== */
+.kpi-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.kpi-card {
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 12px;
+  background: #fff;
+  box-shadow: var(--shadow);
+}
+.kpi-label {
+  font-size: 12px;
+  color: #6b7280;
+  margin-bottom: 8px;
+}
+.kpi-value {
+  font-size: 20px;
+  font-weight: 800;
+  line-height: 1.2;
+  font-variant-numeric: tabular-nums;
+}
+.kpi-sub {
+  margin-top: 6px;
+  font-size: 11px;
+  color: #94a3b8;
+}
+
+/* Stack KPIs on small screens if needed */
+@media (max-width: 420px) {
+  .kpi-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ===========================
    GLOBAL SHADOW VISIBILITY RULE
    =========================== */
@@ -797,7 +819,6 @@ th {
 .modal.hidden,
 .bottom-sheet.hidden {
   box-shadow: none !important;
-  transition: box-shadow 0.25s ease;
 }
 
 /* Apply shadows only when visible */
@@ -816,7 +837,7 @@ th {
 
 #earningsSheet .form-row label {
   min-width: 0;
-  font-size: 13.5px;
+  font-size: 16px;
 }
 
 #earningsSheet input[type="number"],

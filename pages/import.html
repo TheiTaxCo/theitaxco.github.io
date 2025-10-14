@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1.0, viewport-fit=cover"
+    />
+    <title>Import — EarnRoute</title>
+    <link rel="stylesheet" href="../style.css" />
+    <script
+      defer
+      src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
+    ></script>
+    <script defer src="../assets/js/script.js"></script>
+    <script type="module" src="../assets/js/config.supabase.js"></script>
+    <script type="module" src="../assets/js/auth.supabase.js"></script>
+    <script type="module" src="../assets/js/db.supabase.js"></script>
+    <script type="module" src="../assets/js/sync.supabase.js"></script>
+    <script src="../assets/js/util.dom.js"></script>
+
+    <style>
+      .dropzone {
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        padding: 18px;
+        background: #fff;
+        text-align: center;
+        transition: background 120ms ease, border-color 120ms ease;
+      }
+      .dropzone.dragover {
+        background: #f5faff;
+        border-color: #2f6edb;
+      }
+      .hint {
+        color: #666;
+        font-size: 0.92rem;
+        margin-top: 6px;
+      }
+      .preview-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-top: 12px;
+      }
+      .preview-grid div {
+        padding: 10px 12px;
+        background: #fafafa;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+      }
+      .actions {
+        display: flex;
+        gap: 10px;
+        flex-wrap: wrap;
+        margin-top: 14px;
+      }
+      .muted {
+        color: #666;
+      }
+      .ok {
+        color: #035d1f;
+        font-weight: 600;
+      }
+      .err {
+        color: #b91c1c;
+        font-weight: 600;
+      }
+    </style>
+  </head>
+
+  <body>
+    <!-- Fixed Header -->
+    <header class="app-header">
+      <button class="hamburger" aria-label="Menu">
+        <span class="hamburger-bars"></span>
+      </button>
+      <div class="title">EarnRoute</div>
+    </header>
+
+    <main class="content no-actionbar">
+      <section class="card">
+        <h3>Import Data (Export.json)</h3>
+        <p class="muted" style="margin-top: 4px">
+          Load a previously exported JSON into local storage for quick testing.
+        </p>
+
+        <!-- Dropzone + File input -->
+        <div id="dz" class="dropzone" style="margin-top: 12px">
+          <p style="margin: 0 0 8px 0">
+            <strong>Drop Export.json here</strong>
+          </p>
+          <p class="hint">or click to choose a file</p>
+          <input
+            id="fileInput"
+            type="file"
+            accept="application/json,.json"
+            style="display: none"
+          />
+        </div>
+
+        <!-- Validation status -->
+        <p id="statusMsg" class="muted" style="margin: 12px 0 0 0"></p>
+
+        <!-- Preview -->
+        <div id="preview" class="preview-grid" style="display: none">
+          <div>
+            <strong>Exported At</strong><br /><span id="pvExportedAt"></span>
+          </div>
+          <div><strong>Meals</strong><br /><span id="pvMeals"></span></div>
+          <div>
+            <strong>Start → End</strong><br /><span id="pvStartEnd"></span>
+          </div>
+          <div>
+            <strong>Grand Total</strong><br /><span id="pvGrand"></span>
+          </div>
+        </div>
+
+        <!-- Actions -->
+        <div class="actions">
+          <button id="btnLoad" class="btn-primary" disabled>Load to App</button>
+          <button
+            id="btnClear"
+            class="btn-secondary"
+            style="width: fit-content"
+          >
+            Clear Local Data
+          </button>
+        </div>
+      </section>
+    </main>
+
+    <!-- Fixed Bottom Navigation -->
+    <nav class="bottom-nav">
+      <div class="nav-inner">
+        <a class="nav-item" href="home.html">
+          <i data-lucide="home"></i><span>Home</span>
+        </a>
+        <a class="nav-item" href="deliveries.html">
+          <i data-lucide="utensils"></i><span>Deliveries</span>
+        </a>
+        <a class="nav-item" href="earnings.html">
+          <i data-lucide="dollar-sign"></i><span>Earnings</span>
+        </a>
+        <a class="nav-item" href="more.html">
+          <i data-lucide="more-horizontal"></i><span>More</span>
+        </a>
+      </div>
+    </nav>
+
+    <div id="modalBackdrop" class="backdrop"></div>
+    <div id="customToast"></div>
+
+    <script>
+      // --- Helpers ---
+      function setStatus(msg, isOk) {
+        const el = document.getElementById("statusMsg");
+        el.textContent = msg || "";
+        el.className = isOk ? "ok" : msg ? "err" : "muted";
+      }
+      function showPreview(payload) {
+        const da = payload?.deliveryAppState || {};
+        const es = payload?.earningsSummary || {};
+
+        document.getElementById("pvExportedAt").textContent =
+          payload?.exportedAt
+            ? new Date(payload.exportedAt).toLocaleString()
+            : "—";
+
+        const meals = Array.isArray(da.meals) ? da.meals : [];
+        document.getElementById(
+          "pvMeals"
+        ).textContent = `${meals.length} meal(s)`;
+
+        const start = da.startTime || "";
+        const end = da.endTime || "";
+        document.getElementById("pvStartEnd").textContent = start
+          ? end
+            ? `${start} → ${end}`
+            : `${start} → (in progress)`
+          : "—";
+
+        const grand = es?.grandTotal ?? "";
+        document.getElementById("pvGrand").textContent = grand
+          ? `$ ${Number(grand).toFixed(2)}`
+          : "—";
+
+        document.getElementById("preview").style.display = "grid";
+      }
+      function softRefreshAll() {
+        // Let other open pages update themselves
+        localStorage.setItem("adminTriggerRefresh", String(Date.now()));
+      }
+
+      // --- State ---
+      let parsedPayload = null;
+
+      // --- File handling ---
+      const dz = document.getElementById("dz");
+      const fileInput = document.getElementById("fileInput");
+      const btnLoad = document.getElementById("btnLoad");
+      const btnClear = document.getElementById("btnClear");
+
+      function validatePayload(obj) {
+        // Minimal schema checks against your known export shape:
+        // { exportedAt, deliveryAppState:{ meals[], startTime?, endTime? }, earningsSummary:{ ... } }
+        if (!obj || typeof obj !== "object") return "Invalid JSON structure.";
+        if (!("deliveryAppState" in obj)) return "Missing 'deliveryAppState'.";
+        if (!("earningsSummary" in obj)) return "Missing 'earningsSummary'.";
+        const da = obj.deliveryAppState;
+        if (!da || typeof da !== "object")
+          return "'deliveryAppState' must be an object.";
+        if (!Array.isArray(da.meals))
+          return "'deliveryAppState.meals' must be an array.";
+        return ""; // ok
+      }
+
+      function handleFiles(files) {
+        if (!files || !files.length) return;
+        const file = files[0];
+        const reader = new FileReader();
+        reader.onload = () => {
+          try {
+            const obj = JSON.parse(reader.result);
+            const err = validatePayload(obj);
+            if (err) {
+              parsedPayload = null;
+              setStatus(err, false);
+              document.getElementById("preview").style.display = "none";
+              btnLoad.disabled = true;
+              return;
+            }
+            parsedPayload = obj;
+            showPreview(parsedPayload);
+            setStatus("File looks good. Ready to load.", true);
+            btnLoad.disabled = false;
+          } catch (ex) {
+            parsedPayload = null;
+            setStatus("Could not parse JSON file.", false);
+            document.getElementById("preview").style.display = "none";
+            btnLoad.disabled = true;
+          }
+        };
+        reader.readAsText(file);
+      }
+
+      dz.addEventListener("click", () => fileInput.click());
+      fileInput.addEventListener("change", (e) => handleFiles(e.target.files));
+
+      dz.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        dz.classList.add("dragover");
+      });
+      dz.addEventListener("dragleave", () => dz.classList.remove("dragover"));
+      dz.addEventListener("drop", (e) => {
+        e.preventDefault();
+        dz.classList.remove("dragover");
+        handleFiles(e.dataTransfer.files);
+      });
+
+      // --- Actions ---
+      btnLoad.addEventListener("click", () => {
+        if (!parsedPayload) return;
+
+        // Persist exactly how the app expects them (matches export/import schema)
+        localStorage.setItem(
+          "deliveryAppState",
+          JSON.stringify(parsedPayload.deliveryAppState)
+        ); // consumed by loadState() :contentReference[oaicite:4]{index=4}
+        localStorage.setItem(
+          "earningsSummary",
+          JSON.stringify(parsedPayload.earningsSummary)
+        ); // used across Earnings & Home :contentReference[oaicite:5]{index=5}
+
+        softRefreshAll();
+
+        if (typeof showToast === "function")
+          showToast("Import complete. Pages updated.");
+        setStatus(
+          "Import complete. Open Home/Deliveries/Earnings to view.",
+          true
+        );
+      });
+
+      btnClear.addEventListener("click", () => {
+        localStorage.removeItem("deliveryAppState");
+        localStorage.removeItem("earningsSummary");
+        softRefreshAll();
+        if (typeof showToast === "function") showToast("Local data cleared.");
+        document.getElementById("preview").style.display = "none";
+        setStatus("Local data cleared. You can import another file.", false);
+        btnLoad.disabled = true;
+        fileInput.value = "";
+      });
+    </script>
+  </body>
+</html>

@@ -13,10 +13,27 @@ class ERToggle extends HTMLElement {
 
     this.shadowRoot.innerHTML = `
         <style>
-          :host { display: inline-flex; align-items: center; font: inherit; }
-          .toggle { display:inline-flex; align-items:center; gap:10px; user-select:none; }
-          .label { line-height:1.2; }
-          .visually-hidden { position:absolute; width:1px; height:1px; margin:-1px; border:0; padding:0; clip:rect(0 0 0 0); overflow:hidden; }
+          :host { 
+  display: block;            /* full row */
+  width: 100%;
+  font: inherit; 
+}
+.toggle { 
+  display: flex; 
+  align-items: center; 
+  justify-content: space-between; /* label left, switch right */
+  gap: 12px; 
+  user-select: none; 
+  width: 100%;
+}
+.label { 
+  line-height: 1.2; 
+  flex: 1;                   /* take remaining space so switch hugs right */
+}
+.visually-hidden { 
+  position: absolute; width: 1px; height: 1px; margin: -1px; border: 0; padding: 0; clip: rect(0 0 0 0); overflow: hidden; 
+}
+
   
           /* iOS switch */
           .switch {

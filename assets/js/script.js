@@ -819,9 +819,9 @@ function injectActiveCourierStyles() {
   const style = document.createElement("style");
   style.id = "er-active-courier-css";
   style.textContent = `
-       .checkbox-row.active.grubhub::before { background: #ff6100; }
-       .checkbox-row.active.ubereats::before { background: #05bc64; }
-     `;
+          .checkbox-row.active.grubhub::before { background: #ff6100; }
+          .checkbox-row.active.ubereats::before { background: #05bc64; }
+        `;
   document.head.appendChild(style);
 }
 
