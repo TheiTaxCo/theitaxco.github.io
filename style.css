@@ -433,6 +433,112 @@ button {
   margin: 14px 0;
 }
 
+/* ===== Earnings Accordion (single-card version) ===== */
+.earnings-accordion {
+  display: grid;
+  gap: 6px;
+  margin-top: 6px;
+}
+
+/* Header row = positioning context with space for the icon */
+.ea-row {
+  position: relative;
+  padding: 10px 36px 10px 6px; /* reserve right-side space for chevron */
+  width: 100%;
+  background: transparent;
+  border: none;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  cursor: pointer;
+}
+.ea-row:hover {
+  background: rgba(0, 0, 0, 0.03);
+}
+
+/* Left group (brand + label) */
+.ea-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+}
+.ea-brand {
+  font-size: 18px;
+  line-height: 1;
+}
+
+/* Right group now only wraps the amount (no rail/grid) */
+.ea-right {
+  display: block;
+  width: auto;
+}
+
+/* Chevron is taken out of flow so it never pushes the amount */
+.ea-toggle {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 24px;
+  text-align: center;
+  font-size: 22px;
+  line-height: 1;
+}
+
+/* Amount pinned to the card's right edge; decimal-aligned */
+.ea-amount {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ea-currency {
+  flex: 0 0 auto;
+}
+.ea-value {
+  display: inline-flex;
+  align-items: baseline;
+  justify-content: flex-end;
+}
+.ea-int {
+  text-align: right;
+}
+.ea-dot {
+  display: inline-block;
+  width: 0.7ch;
+  text-align: center;
+}
+.ea-dec {
+  display: inline-block;
+  width: 2ch;
+  text-align: left;
+}
+
+/* Inline details: just a top border, no box/shadow */
+.ea-details-inline {
+  padding: 8px 6px 10px 6px;
+  border-top: 1px solid var(--border);
+  margin-top: -2px; /* tucks under header nicely */
+}
+
+/* Detail rows: label | value (value right-aligned) */
+.ea-detail-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  gap: 12px;
+  padding: 6px 0;
+}
+
+/* Divider between couriers (faint) */
+.ea-divider {
+  border: 0;
+  border-top: 1px solid var(--border);
+  margin: 4px 0 2px;
+}
+
 /* Totals on earnings page: label left, value right */
 #earningsTotals .earnings-row {
   display: flex;
@@ -527,7 +633,7 @@ th {
   margin-bottom: 12px;
   cursor: pointer;
   position: relative;
-  height: 60px;
+  height: 65px;
 }
 
 /* Left status stripe (straight inside edge, rounded outside edge) */

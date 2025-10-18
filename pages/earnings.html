@@ -12,6 +12,8 @@
       defer
       src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"
     ></script>
+    <script src="https://code.iconify.design/iconify-icon/2.1.0/iconify-icon.min.js"></script>
+
     <script defer src="../assets/js/script.js"></script>
     <script type="module" src="../assets/js/config.supabase.js"></script>
     <script type="module" src="../assets/js/auth.supabase.js"></script>
@@ -55,21 +57,149 @@
 
       <!-- DAY card -->
       <section class="card" id="earningsTotals">
-        <h3 style="margin-bottom: 30px">Today's Earnings</h3>
-        <p class="earnings-row">
-          <strong>Grubhub Total:</strong>
-          <span class="amount" id="ghTotal">0.00</span>
-        </p>
-        <hr class="drawer-sep" />
-        <p class="earnings-row">
-          <strong>Uber Eats Total:</strong>
-          <span class="amount" id="ueTotal">0.00</span>
-        </p>
-        <hr class="drawer-sep" />
-        <p class="earnings-row">
+        <h3 style="margin-bottom: 12px">Today's Earnings</h3>
+
+        <!-- Accordion container -->
+        <div class="earnings-accordion" id="earningsAccordion">
+          <!-- Grubhub row -->
+          <button
+            class="ea-row"
+            type="button"
+            data-courier="grubhub"
+            aria-expanded="false"
+          >
+            <div class="ea-left">
+              <iconify-icon
+                icon="simple-icons:grubhub"
+                class="ea-brand"
+              ></iconify-icon>
+              <strong>Grubhub</strong>
+            </div>
+            <div class="ea-right">
+              <!-- HEADER TOTAL (split into $ + int.dec) -->
+              <span class="ea-amount">
+                <span class="ea-currency">$</span>
+                <span id="ea-gh-total" class="ea-value">
+                  <span class="ea-int">0</span><span class="ea-dot">.</span
+                  ><span class="ea-dec">00</span>
+                </span>
+              </span>
+              <iconify-icon
+                icon="mdi:chevron-down"
+                class="ea-toggle"
+              ></iconify-icon>
+            </div>
+          </button>
+
+          <!-- ✅ Put all GH details back into a hidden wrapper so collapse works -->
+          <div class="ea-details-inline" id="ea-gh-details" hidden>
+            <div class="ea-detail-row">
+              <span>Delivery Pay</span>
+              <span class="ea-amount">
+                <span class="ea-currency">$</span>
+                <span id="ea-gh-delivery" class="ea-value">
+                  <span class="ea-int">0</span><span class="ea-dot">.</span
+                  ><span class="ea-dec">00</span>
+                </span>
+              </span>
+            </div>
+            <div class="ea-detail-row">
+              <span>Tips</span>
+              <span class="ea-amount">
+                <span class="ea-currency">$</span>
+                <span id="ea-gh-tips" class="ea-value">
+                  <span class="ea-int">0</span><span class="ea-dot">.</span
+                  ><span class="ea-dec">00</span>
+                </span>
+              </span>
+            </div>
+            <div class="ea-detail-row">
+              <span>Adjustments</span>
+              <span class="ea-amount">
+                <span class="ea-currency">$</span>
+                <span id="ea-gh-adj" class="ea-value">
+                  <span class="ea-int">0</span><span class="ea-dot">.</span
+                  ><span class="ea-dec">00</span>
+                </span>
+              </span>
+            </div>
+          </div>
+
+          <hr class="ea-divider" />
+
+          <!-- Uber Eats row -->
+          <button
+            class="ea-row"
+            type="button"
+            data-courier="ubereats"
+            aria-expanded="false"
+          >
+            <div class="ea-left">
+              <iconify-icon
+                icon="simple-icons:ubereats"
+                class="ea-brand"
+              ></iconify-icon>
+              <strong>Uber Eats</strong>
+            </div>
+            <div class="ea-right">
+              <!-- HEADER TOTAL (split into $ + int.dec) -->
+              <span class="ea-amount">
+                <span class="ea-currency">$</span>
+                <span id="ea-ue-total" class="ea-value">
+                  <span class="ea-int">0</span><span class="ea-dot">.</span
+                  ><span class="ea-dec">00</span>
+                </span>
+              </span>
+              <iconify-icon
+                icon="mdi:chevron-down"
+                class="ea-toggle"
+              ></iconify-icon>
+            </div>
+          </button>
+
+          <!-- ✅ Match class + hidden like GH -->
+          <div class="ea-details-inline" id="ea-ue-details" hidden>
+            <div class="ea-detail-row">
+              <span>Delivery Pay</span>
+              <span class="ea-amount">
+                <span class="ea-currency">$</span>
+                <span id="ea-ue-delivery" class="ea-value">
+                  <span class="ea-int">0</span><span class="ea-dot">.</span
+                  ><span class="ea-dec">00</span>
+                </span>
+              </span>
+            </div>
+            <div class="ea-detail-row">
+              <span>Tips</span>
+              <span class="ea-amount">
+                <span class="ea-currency">$</span>
+                <span id="ea-ue-tips" class="ea-value">
+                  <span class="ea-int">0</span><span class="ea-dot">.</span
+                  ><span class="ea-dec">00</span>
+                </span>
+              </span>
+            </div>
+            <div class="ea-detail-row">
+              <span>Adjustments</span>
+              <span class="ea-amount">
+                <span class="ea-currency">$</span>
+                <span id="ea-ue-adj" class="ea-value">
+                  <span class="ea-int">0</span><span class="ea-dot">.</span
+                  ><span class="ea-dec">00</span>
+                </span>
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <hr class="ea-divider" />
+
+        <!-- Grand total (keeps your existing CSS `$` via ::before) -->
+        <p class="earnings-row" style="margin-top: 8px">
           <strong>Grand Total:</strong>
           <span class="amount grand" id="grandTotal">0.00</span>
         </p>
+
         <div style="margin-top: 12px">
           <button id="openEarningsBtn" class="btn-primary">Earnings</button>
         </div>

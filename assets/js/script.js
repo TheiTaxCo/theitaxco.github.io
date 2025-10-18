@@ -13,6 +13,24 @@ function formatNow() {
   return new Date().toLocaleString();
 }
 
+function formatMoneyParts(n) {
+  const v = Number(n || 0);
+  const s = v.toFixed(2);
+  const [intPart, decPart] = s.split(".");
+  return { intPart, decPart };
+}
+
+function setMoneyParts(containerId, n) {
+  const el = document.getElementById(containerId);
+  if (!el) return;
+  const { intPart, decPart } = formatMoneyParts(n);
+  // Expect structure: <span id="...ea-value"><span class="ea-int"></span><span class="ea-dot">.</span><span class="ea-dec"></span></span>
+  const intEl = el.querySelector(".ea-int");
+  const decEl = el.querySelector(".ea-dec");
+  if (intEl) intEl.textContent = intPart;
+  if (decEl) decEl.textContent = decPart;
+}
+
 /* Human readable HMS (with seconds) */
 function formatDurationHMS(start, end) {
   const diff = end - start;
@@ -726,6 +744,92 @@ function refreshEarningsLabels() {
       saved.grandTotal ?? "0.00";
 }
 
+/* ---------- Earnings (accordion) ---------- */
+function getEarningsSafe() {
+  try {
+    const es = JSON.parse(localStorage.getItem("earningsSummary") || "{}");
+    const gh = es.grubhub || {};
+    const ue = es.uberEats || {};
+    return {
+      gh: {
+        delivery: Number(gh.deliveryPay || 0),
+        tips: Number(gh.tips || 0),
+        adj: Number(gh.adjustmentPay || 0),
+        total: Number(gh.total || 0),
+      },
+      ue: {
+        delivery: Number(ue.deliveryPay || 0),
+        tips: Number(ue.tips || 0),
+        adj: Number(ue.adjustmentPay || 0),
+        total: Number(ue.total || 0),
+      },
+      grand: Number(es.grandTotal || 0),
+    };
+  } catch {
+    return {
+      gh: { delivery: 0, tips: 0, adj: 0, total: 0 },
+      ue: { delivery: 0, tips: 0, adj: 0, total: 0 },
+      grand: 0,
+    };
+  }
+}
+
+function setMoney(el, n) {
+  if (!el) return;
+  el.textContent = Number(n || 0).toFixed(2);
+}
+
+function renderEarningsCard() {
+  // only on earnings page
+  if (!document.getElementById("earningsTotals")) return;
+
+  const { gh, ue, grand } = getEarningsSafe();
+
+  // Header totals (use parts so decimal alignment HTML stays intact)
+  setMoneyParts("ea-gh-total", gh.total);
+  setMoneyParts("ea-ue-total", ue.total);
+
+  // Day card Grand Total remains plain number; CSS adds "$"
+  setMoney(document.getElementById("grandTotal"), grand);
+
+  // Details (use parts)
+  setMoneyParts("ea-gh-delivery", gh.delivery);
+  setMoneyParts("ea-gh-tips", gh.tips);
+  setMoneyParts("ea-gh-adj", gh.adj);
+
+  setMoneyParts("ea-ue-delivery", ue.delivery);
+  setMoneyParts("ea-ue-tips", ue.tips);
+  setMoneyParts("ea-ue-adj", ue.adj);
+
+  // attach toggles once
+  const acc = document.getElementById("earningsAccordion");
+  if (acc && !acc.dataset.bound) {
+    acc.addEventListener("click", (e) => {
+      const btn = e.target.closest(".ea-row");
+      if (!btn) return;
+      const courier = btn.dataset.courier;
+      const details =
+        courier === "grubhub"
+          ? document.getElementById("ea-gh-details")
+          : document.getElementById("ea-ue-details");
+      const chevron = btn.querySelector(".ea-toggle");
+
+      const expanded = btn.getAttribute("aria-expanded") === "true";
+      btn.setAttribute("aria-expanded", String(!expanded));
+      if (details) details.hidden = expanded;
+
+      // swap chevron
+      if (chevron && window.customElements) {
+        chevron.setAttribute(
+          "icon",
+          expanded ? "mdi:chevron-down" : "mdi:chevron-up"
+        );
+      }
+    });
+    acc.dataset.bound = "1";
+  }
+}
+
 /* ---------- Odometer caret helper ---------- */
 function moveCaretToEnd(el) {
   if (!el) return;
@@ -838,6 +942,7 @@ window.addEventListener("DOMContentLoaded", () => {
   }
 
   loadState();
+  renderEarningsCard();
 
   // Header hamburger opens/closes the drawer
   const headerHamburger = document.querySelector(".app-header .hamburger");
@@ -1127,6 +1232,10 @@ window.addEventListener("storage", (e) => {
     loadState();
     initHomePage();
     setActiveNav();
+  }
+  if (e.key === "earningsSummary") {
+    renderEarningsCard(); // <-- add this
+    refreshEarningsLabels();
   }
 });
 
