@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>EarnRoute — Dashboard</title>
 
-    <!-- Correct path from /pages/ -->
+    <!-- correct path from /pages -->
     <link rel="stylesheet" href="../style.css" />
 
     <style>
@@ -19,8 +19,6 @@
         --card-border: #e6e7eb;
         --primary: #2563eb;
       }
-
-      /* Base page layout: reserve space for fixed header */
       body {
         margin: 0;
         background: #fafafa;
@@ -31,7 +29,6 @@
         padding-top: var(--header-h);
       }
 
-      /* ===== Fixed Top Header ===== */
       .app-header {
         position: fixed;
         top: 0;
@@ -52,8 +49,6 @@
         font-size: 22px;
         letter-spacing: 0.2px;
       }
-
-      /* Hamburger */
       .hamburger {
         width: 36px;
         height: 36px;
@@ -101,7 +96,6 @@
         opacity: 0;
       }
 
-      /* ===== Content Width Matches Your Current Look ===== */
       .wrap {
         max-width: 900px;
         margin: 0 auto;
@@ -114,7 +108,6 @@
         font-size: 20px;
       }
 
-      /* ===== Card + inner layout (your existing look) ===== */
       .card {
         background: #fff;
         border: 1px solid var(--card-border);
@@ -139,26 +132,23 @@
         max-width: none;
       }
 
-      /* Make custom element stretch to .wrap width */
-      .wrap er-gh-active-time {
+      .wrap er-active-time {
         display: block;
         width: 100%;
         max-width: 100%;
       }
-      .wrap .er-gh-active-time.card {
+      .wrap .er-active-time.card {
         width: 100%;
       }
 
-      /* ===== Left slide-in drawer + backdrop ===== */
       .drawer {
         position: fixed;
         top: var(--header-h);
         left: 0;
         width: var(--drawer-w);
         height: calc(100vh - var(--header-h));
-        background: #ffffff;
-        /* was: box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15); */
-        box-shadow: none; /* ← prevent left-edge shadow while closed */
+        background: #fff;
+        box-shadow: none;
         transform: translateX(-100%);
         transition: transform 0.22s ease-in-out, box-shadow 0.22s ease-in-out;
         z-index: 1001;
@@ -167,7 +157,7 @@
       }
       .drawer.open {
         transform: translateX(0);
-        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15); /* ← shadow only when open */
+        box-shadow: 2px 0 8px rgba(0, 0, 0, 0.15);
       }
       .drawer-header {
         display: flex;
@@ -239,7 +229,6 @@
         overflow: hidden;
       }
 
-      /* ===== Date Filter Bar (modern + mobile friendly) ===== */
       .filter-bar {
         background: #fff;
         border: 1px solid var(--card-border);
@@ -300,7 +289,6 @@
   </head>
 
   <body>
-    <!-- Fixed Header -->
     <header class="app-header" id="topHeader">
       <button
         class="hamburger"
@@ -321,7 +309,7 @@
           <p>Quick view of your daily metrics.</p>
         </header>
 
-        <!-- ===== Date Range Filter ===== -->
+        <!-- Date Range Filter -->
         <div class="filter-bar">
           <div class="filter-group">
             <label for="startDate">Start Date</label>
@@ -336,18 +324,32 @@
           </div>
         </div>
 
-        <!-- Active Time Card -->
-        <er-gh-active-time
-          id="activeCard"
+        <!-- Active Time Cards -->
+        <er-active-time
+          id="ghActive"
           title="Active Time — Grubhub"
-        ></er-gh-active-time>
+          courier="grubhub"
+        ></er-active-time>
+        <er-active-time
+          id="ueActive"
+          title="Active Time — Uber Eats"
+          courier="ubereats"
+        ></er-active-time>
       </div>
     </div>
 
-    <!-- Component script -->
+    <!-- Initialize Supabase from the correct file -->
+    <script type="module">
+      import { supabase } from "../assets/js/config.supabase.js";
+      window.supabase = supabase;
+      window.dispatchEvent(new Event("er:supabase:ready"));
+      console.log("[Dashboard] Supabase initialized:", !!window.supabase);
+    </script>
+
+    <!-- Component (correct path) -->
     <script src="../assets/js/components/gh-active-time-card.js"></script>
 
-    <!-- Drawer -->
+    <!-- Drawer + Filters -->
     <aside id="sideDrawer" class="drawer" aria-hidden="true">
       <div class="drawer-header">
         <h3>George Moreno</h3>
@@ -355,16 +357,13 @@
           ×
         </button>
       </div>
-
       <div class="drawer-content">
         <a href="dashboard.html" class="drawer-link">Dashboard</a>
         <a href="home.html" class="drawer-link">Home</a>
         <a href="deliveries.html" class="drawer-link">Deliveries</a>
         <a href="earnings.html" class="drawer-link">Earnings</a>
         <a href="more.html" class="drawer-link">More</a>
-
         <hr class="drawer-sep" />
-
         <button id="logoutBtn" class="drawer-logout">Logout</button>
         <p
           style="
@@ -374,16 +373,14 @@
             margin-top: 8px;
           "
         >
-          Version: 3.0.0
+          Version: 3.0.7
         </p>
       </div>
     </aside>
-
     <div id="modalBackdrop" class="backdrop" hidden></div>
 
-    <!-- Behavior -->
     <script>
-      // Drawer logic (kept intact)
+      // Drawer
       (function () {
         const body = document.body;
         const drawer = document.getElementById("sideDrawer");
@@ -418,21 +415,18 @@
           if (e.key === "Escape") closeDrawer();
         });
 
-        // Logout
         document.getElementById("logoutBtn").addEventListener("click", () => {
           try {
-            /* clear session if needed */
           } catch {}
           window.location.href = "login.html";
         });
       })();
 
-      // Date range filter -> card attributes
+      // Date range -> cards
       (function () {
         const today = new Date();
-        const y = today.getFullYear();
         const z = (n) => String(n).padStart(2, "0");
-        const todayYMD = `${y}-${z(today.getMonth() + 1)}-${z(
+        const todayYMD = `${today.getFullYear()}-${z(today.getMonth() + 1)}-${z(
           today.getDate()
         )}`;
 
@@ -441,32 +435,25 @@
         startInput.value = todayYMD;
         endInput.value = todayYMD;
 
-        const card = document.getElementById("activeCard");
+        const gh = document.getElementById("ghActive");
+        const ue = document.getElementById("ueActive");
 
         function apply() {
           let s = startInput.value || todayYMD;
           let e = endInput.value || todayYMD;
-          // Normalize if user inverted range
-          if (s > e) {
-            const t = s;
-            s = e;
-            e = t;
+          if (s > e) [s, e] = [e, s];
+          for (const el of [gh, ue]) {
+            el.setAttribute("date-start", s);
+            el.setAttribute("date-end", e);
           }
-
-          card.setAttribute("date-start", s);
-          card.setAttribute("date-end", e);
-
-          // Re-render
           window.dispatchEvent(new CustomEvent("er:deliveries:updated"));
         }
 
         document.getElementById("applyFilter").addEventListener("click", apply);
-        // Also update instantly when the user changes either date:
         startInput.addEventListener("change", apply);
         endInput.addEventListener("change", apply);
 
-        // Apply once on load
-        apply();
+        window.addEventListener("er:supabase:ready", apply);
       })();
     </script>
   </body>
