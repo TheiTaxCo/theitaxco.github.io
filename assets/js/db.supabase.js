@@ -107,42 +107,99 @@ export async function listPlatforms() {
   return data || [];
 }
 
-// --- Weekly Earnings (Mon-Sun) from earnings table ---
-export async function sumWeeklyEarningsFromEarningsTable(
-  startDateISO,
-  endDateISO
-) {
-  // startDateISO / endDateISO: "YYYY-MM-DD"
+// --- Weekly Earnings from earnings table (LA week, stored as UTC DATE = LA+1) ---
+// Overloads:
+//   sumWeeklyEarningsFromEarningsTable()                  -> week containing today (Mon–Sun, LA)
+//   sumWeeklyEarningsFromEarningsTable(anchorISO)         -> week containing anchorISO (LA)
+//   sumWeeklyEarningsFromEarningsTable(startISO, endISO)  -> explicit LA [Mon..Sun], end inclusive
+export async function sumWeeklyEarningsFromEarningsTable(a, b) {
   const {
     data: { user },
   } = await supabase.auth.getUser();
   if (!user) throw new Error("Not authenticated");
 
-  // Pull only what's needed; totals are stored as strings in your sample
+  const toDateOnly = (d) => d.toISOString().slice(0, 10); // "YYYY-MM-DD"
+  const atStartOfDay = (d) => {
+    const x = new Date(d);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  };
+  const atEndOfDay = (d) => {
+    const x = new Date(d);
+    x.setHours(23, 59, 59, 999);
+    return x;
+  };
+  const addDays = (d, n) => {
+    const x = new Date(d);
+    x.setDate(x.getDate() + n);
+    x.setHours(0, 0, 0, 0);
+    return x;
+  };
+
+  // 1) Build LA week window (Mon 00:00 → Sun 23:59:59.999) from inputs in LA
+  let laMonStart, laSunEndInclusive;
+  if (a && b) {
+    // Caller provided explicit LA dates (YYYY-MM-DD)
+    laMonStart = atStartOfDay(new Date(`${a}T00:00:00`)); // Monday LA
+    laSunEndInclusive = atEndOfDay(new Date(`${b}T00:00:00`)); // Sunday LA
+  } else {
+    // Anchor-based LA week (Mon..Sun)
+    const anchor = a ? new Date(`${a}T00:00:00`) : new Date();
+    const mon = atStartOfDay(anchor);
+    const dow = mon.getDay(); // 0=Sun..6=Sat
+    const deltaToMon = (dow + 6) % 7; // Mon->0, Sun->6
+    mon.setDate(mon.getDate() - deltaToMon);
+    laMonStart = mon;
+    const sun = atEndOfDay(addDays(mon, 6));
+    laSunEndInclusive = sun;
+  }
+
+  // 2) Map LA dates to stored UTC DATEs (your `earnings_date` behaves as LA+1 day)
+  // Stored window: Tue (LA Mon + 1) up to next Tue exclusive
+  const storedStart = addDays(laMonStart, 1); // Tue
+  const storedEndExclusive = addDays(storedStart, 7); // next Tue (exclusive)
+
+  const startISO = toDateOnly(storedStart);
+  const endExclusiveISO = toDateOnly(storedEndExclusive);
+
+  // 3) Query with inclusive lower + exclusive upper
   const { data, error } = await supabase
     .from("earnings")
-    .select("platform_id, total, earnings_date")
+    .select(
+      "platform_id, earnings_date, total, delivery_pay, tips, adjustment_pay"
+    )
     .eq("user_id", user.id)
-    .gte("earnings_date", startDateISO)
-    .lte("earnings_date", endDateISO);
+    .gte("earnings_date", startISO) // include Tue start
+    .lt("earnings_date", endExclusiveISO); // exclude next Tue
 
   if (error) throw error;
 
-  // Map your platform ids → codes (no join needed for now)
-  // platforms table example shows: 1=grubHub, 2=uberEats
+  // 4) Sum amounts per platform (prefer parts when present)
   const idToCode = { 1: "grubhub", 2: "ubereats" };
-
   let gh = 0,
     ue = 0;
+
   for (const r of data || []) {
-    const code = idToCode[r.platform_id];
-    const amt = parseFloat(r.total) || 0;
-    if (code === "grubhub") gh += amt;
-    else if (code === "ubereats") ue += amt;
+    const hasParts =
+      r.delivery_pay != null || r.tips != null || r.adjustment_pay != null;
+    const delivery = parseFloat(r.delivery_pay ?? 0) || 0;
+    const tips = parseFloat(r.tips ?? 0) || 0;
+    const adj = parseFloat(r.adjustment_pay ?? 0) || 0;
+    const amount = hasParts ? delivery + tips + adj : parseFloat(r.total) || 0;
+
+    if (idToCode[r.platform_id] === "grubhub") gh += amount;
+    else if (idToCode[r.platform_id] === "ubereats") ue += amount;
   }
+
   return {
+    laRange: {
+      start: toDateOnly(laMonStart),
+      endInclusive: toDateOnly(addDays(laMonStart, 6)),
+    },
+    storedRange: { start: startISO, endExclusive: endExclusiveISO },
     grubhub: Number(gh.toFixed(2)),
     ubereats: Number(ue.toFixed(2)),
     grand: Number((gh + ue).toFixed(2)),
+    rows: data || [],
   };
 }
