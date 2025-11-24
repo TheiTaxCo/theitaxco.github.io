@@ -20,8 +20,10 @@
     <script src="../assets/js/util.dom.js"></script>
     <!-- KPI component-->
     <script type="module" src="../assets/js/components/kpi-cards.js"></script>
+    <!-- Statistics component-->
+    <script type="module" src="../assets/js/components/stats-cards.js"></script>
 
-    <!-- ✅ Authentication gate -->
+    <!-- Authentication gate -->
     <script type="module">
       import { requireAuthOrRedirect } from "../assets/js/auth.supabase.js";
       requireAuthOrRedirect(); // kicks to login if not signed in
@@ -99,6 +101,11 @@
       <section class="card" id="kpiSection">
         <h3>KPIs</h3>
         <er-kpi-cards></er-kpi-cards>
+      </section>
+      <!-- Statistics (new) -->
+      <section class="card" id="statsSection">
+        <h3>Statistics</h3>
+        <er-stats-cards></er-stats-cards>
       </section>
     </main>
 
