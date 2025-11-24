@@ -31,7 +31,7 @@ function setMoneyParts(containerId, n) {
   if (decEl) decEl.textContent = decPart;
 }
 
-/* Human readable HMS (with seconds) */
+/* Real-time readable HMS (with seconds) */
 function formatDurationHMS(start, end) {
   const diff = end - start;
   if (!isFinite(diff) || diff < 0) return "Pending";
@@ -198,7 +198,7 @@ function saveState() {
     state.odometerEnd = odoEndEl.value.trim();
   }
 
-  // ✅ Only rebuild meals array if we're on Deliveries (i.e., tiles exist)
+  // Only rebuild meals array if we're on Deliveries (i.e., tiles exist)
   const rows = document.querySelectorAll(".checkbox-row");
   if (rows.length > 0) {
     const nextMeals = [];
@@ -220,7 +220,7 @@ function saveState() {
     });
     state.meals = nextMeals;
   }
-  // else: keep previous meals as-is to avoid wiping when not on Deliveries
+  // else: I keep previous meals as-is to avoid wiping when not on Deliveries
 
   localStorage.setItem("deliveryAppState", JSON.stringify(state));
 }
@@ -357,7 +357,7 @@ function ensureCopyButton() {
 
     container.appendChild(btn);
   } else {
-    // move it to the end of ACTIVE group
+    // I move it to the end of ACTIVE group
     container.remove();
   }
 
@@ -415,7 +415,7 @@ function addMeal(
 
   left.setAttribute("aria-pressed", checkbox.checked ? "true" : "false");
 
-  // Make the entire left cluster toggle the checkbox
+  // I Make the entire left cluster toggle the checkbox
   left.tabIndex = 0; // keyboard focusable
   left.setAttribute("role", "button"); // accessibility hint
 
@@ -492,7 +492,7 @@ function addMeal(
     const currentCourier = row.dataset.courier || "";
     updateCourierUI(currentCourier);
 
-    // Enable Delivered iff a courier is picked and not already delivered
+    // Enable Delivered if a courier is picked and not already delivered
     markBtn.disabled = !!row.dataset.delivered || !currentCourier;
 
     // Disable courier controls if already delivered
@@ -548,10 +548,10 @@ function addMeal(
     const accepted = (timestamp.textContent || "").trim() !== "";
     const delivered = !!row.dataset.delivered;
 
-    // Show arrow (>) if the meal has been accepted (checkbox checked) OR it's completed.
+    // I Show arrow (>) if the meal has been accepted (checkbox checked) OR it's completed.
     const showArrow = (checkbox.checked || delivered) && accepted;
 
-    // Show remove (x) only when not delivered and not accepted.
+    // I Show remove (x) only when not delivered and not accepted.
     const showRemove = !delivered && !checkbox.checked && !accepted; // when unchecked, no accepted time, and not delivered
 
     // Use flex to match CSS button layout
@@ -570,7 +570,7 @@ function addMeal(
   row.appendChild(arrowBtn);
   group.appendChild(row);
 
-  /* Apply classes for active/completed AND courier color */
+  /* I apply classes for active/completed AND courier color */
   applyTileClasses(row);
 
   ensureCopyButton();

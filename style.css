@@ -54,7 +54,7 @@ button {
   border-bottom: 1px solid var(--border);
 }
 
-/* Header content kept above any decorative layers (safe guard) */
+/* Header content and I kept above any decorative layers (safe guard) */
 .app-header::before,
 .app-header::after {
   pointer-events: none;
@@ -610,7 +610,7 @@ button {
   justify-content: space-between;
   background-color: #fff;
   padding: 16px 20px;
-  border-left: none; /* don't use a real border for the stripe */
+  border-left: none; /* I don't use a real border for the stripe */
   border-radius: 14px;
   box-shadow: var(--shadow);
   margin-bottom: 12px;
@@ -624,7 +624,7 @@ button {
   content: "";
   position: absolute;
   inset: 0 auto 0 0; /* top:0; left:0; bottom:0 */
-  width: 8px; /* stripe thickness (adjust if you like) */
+  width: 8px; /* stripe thickness (adjustable) */
 
   /* Round only the OUTSIDE (left) corners to match the tile */
   border-top-left-radius: 14px; /* same value as .checkbox-row */
