@@ -44,6 +44,7 @@
             // Redirect to app home on success
             location.assign(new URL("./home.html", location.href));
           } catch (err) {
+            console.error("🔴 Supabase login error:", err); // <-- DEBUG LINE
             errorBox.textContent = err?.message || "Invalid email or password.";
             errorBox.style.display = "block";
           }
